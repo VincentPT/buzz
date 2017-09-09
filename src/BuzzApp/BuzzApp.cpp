@@ -72,17 +72,21 @@ void BuzzApp::mouseDrag( MouseEvent event )
 
 void BuzzApp::keyDown( KeyEvent event )
 {
-	if( event.getChar() == 'f' )
+/*	if( event.getChar() == 'f' )
 		setFullScreen( ! isFullScreen() );
-	else if( event.getChar() == 'w' )
+	else */
+	if( event.getChar() == 'w' )
 		createNewWindow();
 }
 
 void BuzzApp::draw()
 {
 	//gl::clear( Color( 0.1f, 0.1f, 0.15f ) );
-	gl::clear(Color(1.0f, 1.0f, 1.0f));
 	
+	auto currentNativeWindow = getWindow();
+	auto currentWindow = currentNativeWindow->getUserData<BuzzWindow>();
+	currentWindow->draw();
+
 	/*if (data->_tex) {
 		gl::draw(data->_tex);
 	}*/
