@@ -5,11 +5,14 @@ using namespace ci;
 using namespace ci::app;
 
 WindowSettingsDlg::WindowSettingsDlg(ci::app::WindowRef window) :
-	BuzzDialog("Window settings", 300, 500, window) {
+	BuzzDialog("Window settings", 300, 200, window) {
 	pretzel::PretzelGuiRef nativeDlg = getNative();
 
 	// add components to window settings gui
 	nativeDlg->addColorPicker("Background Color", &_bckColor);
+	nativeDlg->addTextField("process name", &_processName, true);
+	nativeDlg->addButton("monitor", &WindowSettingsDlg::onMonitorButtonPress, this);
+
 	nativeDlg->addSaveLoad();
 	nativeDlg->loadSettings();
 }
@@ -24,6 +27,20 @@ ci::ColorA& WindowSettingsDlg::getBckColor() {
 }
 
 // set object's background color
-void WindowSettingsDlg::setBckColor(const ci::ColorA& color) {
+WindowSettingsDlg& WindowSettingsDlg::setBckColor(const ci::ColorA& color) {
 	_bckColor = color;
+	return *this;
+}
+
+std::string WindowSettingsDlg::getProcessName() const {
+	return _processName;
+}
+
+WindowSettingsDlg& WindowSettingsDlg::setProcessName(const std::string& processName) {
+	_processName = processName;
+	return *this;
+}
+
+void WindowSettingsDlg::onMonitorButtonPress() {
+
 }

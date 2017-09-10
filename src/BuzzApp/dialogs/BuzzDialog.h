@@ -16,4 +16,5 @@ public:
 	virtual void show();
 	virtual void hide();
 	virtual void display();
+	virtual bool isVisible();
 };

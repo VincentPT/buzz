@@ -4,5 +4,14 @@ project(buzz)
 # add cinder depencies interface
 add_subdirectory(cinder)
 
-# define project's build target with project's source files
+# add opencv depencies interface
+add_subdirectory(opencv)
+
+# spylib
+add_subdirectory(spylib)
+
+# spy engine
+add_subdirectory(spy)
+
+# buzz host application
 add_subdirectory(BuzzApp)

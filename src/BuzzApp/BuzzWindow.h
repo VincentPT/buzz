@@ -14,9 +14,12 @@ class BuzzWindow
 	std::shared_ptr<WindowSettingsDlg>		_windowSettingsDlgRef;
 	std::shared_ptr<ObjectSettingsDlg>		_objectSettingsDlgRef;
 	std::shared_ptr<ObjectInputerDlg>		_objectInputerDlgRef;
+	std::shared_ptr<BuzzDialog>				_activeDialog;
 	
 private:
 	void onAddObjectButtonPress();
+	void onKeyPress(ci::app::KeyEvent& e);
+	void onClose();
 protected:
 	void setupWindow();
 public:
@@ -26,6 +29,8 @@ public:
 
 	BuzzWindow& setTitle(const std::string& title);
 	BuzzWindow& setSize(int width, int height);
+
+	void showInputerWithAddress(void* address);
 
 	/// this function is should only should only be called by draw function of a cinder app
 	void draw();

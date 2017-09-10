@@ -4,29 +4,36 @@
 #include "cinder/Rand.h"
 #include <list>
 #include "BuzzWindow.h"
+#include "utils/ClipboardViewer.h"
 
 using namespace ci;
 using namespace ci::app;
 using namespace std;
 
-BuzzApp* g_instance = nullptr;
 BuzzApp::BuzzApp() {
-	g_instance = this;
 }
 BuzzApp::~BuzzApp() {
-	g_instance = nullptr;
-}
-
-BuzzApp* BuzzApp::getInstance() {
-	return g_instance;
 }
 
 void BuzzApp::setup()
-{
+{	
 	WindowRef defaultNativeWindow = getWindow();
 
 	auto firstWindow = new BuzzWindow(defaultNativeWindow);
 	firstWindow->setTitle("buzz");
+
+	ClipboardViewer* clipboardViewer = ClipboardViewer::getInstance();
+	// register ANSI text handler
+	clipboardViewer->connect([this](const string& text) {
+		auto activeWindow = this->getForegroundWindow();
+		
+		void* address = ObjectInputerDlg::convertToAddress(text);
+		if (address != nullptr) {
+			auto buzzWindow = activeWindow->getUserData<BuzzWindow>();
+			buzzWindow->showInputerWithAddress(address);
+		}
+	});
+
 	
 	//FILE* fp = NULL;
 	//fopen_s(&fp, "img.dat", "rb");
@@ -75,7 +82,7 @@ void BuzzApp::keyDown( KeyEvent event )
 /*	if( event.getChar() == 'f' )
 		setFullScreen( ! isFullScreen() );
 	else */
-	if( event.getChar() == 'w' )
+	if( event.getChar() == 'q' )
 		createNewWindow();
 }
 

@@ -15,8 +15,4 @@ public:
 	void keyDown(ci::app::KeyEvent event);
 	void draw();
 	void createNewWindow();
-	
-	/// static methods
-public:
-	static BuzzApp* getInstance();
 };

@@ -66,21 +66,34 @@ SET (DIALOG_SOURCES
     dialogs/BuzzCustomGui.cpp
 )
 
-SET (SOURCES ${MAIN_SOURCES} ${PRETZEL_SOURCES} ${DIALOG_SOURCES})
+SET (UTILITIES
+    utils/ClipboardViewer.h
+    utils/ClipboardViewer.cpp
+    utils/SpyClient.cpp
+    utils/SpyClient.h
+    utils/string_util.hpp
+    utils/ScopeAutoFunction.hpp
+)
+
+SET (SOURCES ${MAIN_SOURCES} ${PRETZEL_SOURCES} ${DIALOG_SOURCES} ${UTILITIES})
 
 # [Visual studio specific]group the source into solution folder
 source_group(PretzelGui FILES ${PRETZEL_SOURCES})
 source_group(dialogs FILES ${DIALOG_SOURCES})
+source_group(utils FILES ${UTILITIES})
 
 # define project's build target with project's source files
 add_executable(${PROJECT_NAME} WIN32 ${SOURCES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/cinder/blocks/PretzelGui/src)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/spy)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/spylib)
+
 target_link_libraries(${PROJECT_NAME} cinder)
 # set_target_properties( ${PROJECT_NAME} PROPERTIES LINK_FLAGS_DEBUG "/NODEFAULTLIB:LIBCMT /NODEFAULTLIB:LIBCPMT" )
 # target_compile_options(${PROJECT_NAME} PRIVATE /utf-8)
 
 SET (INSTALL_DEST ${CMAKE_BINARY_DIR}/bin/)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Debug/${PROJECT_NAME}.exe DESTINATION ${INSTALL_DEST} CONFIGURATIONS Debug)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Release/${PROJECT_NAME}.exe DESTINATION ${INSTALL_DEST} CONFIGURATIONS Release)    
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Release/${PROJECT_NAME}.exe DESTINATION ${INSTALL_DEST} CONFIGURATIONS Release)

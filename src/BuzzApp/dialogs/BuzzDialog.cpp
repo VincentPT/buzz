@@ -26,3 +26,7 @@ void BuzzDialog::hide() {
 void BuzzDialog::display() {
 	_nativeDlg->draw();
 }
+
+bool BuzzDialog::isVisible() {
+	return _nativeDlg->isVisible();
+}

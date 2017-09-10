@@ -5,7 +5,7 @@ using namespace ci;
 using namespace ci::app;
 
 ObjectSettingsDlg::ObjectSettingsDlg(ci::app::WindowRef window) :
-	BuzzDialog("Object settings", 300, 500, window) {
+	BuzzDialog("Object settings", 300, 200, window) {
 
 	pretzel::PretzelGuiRef nativeDlg = getNative();
 
