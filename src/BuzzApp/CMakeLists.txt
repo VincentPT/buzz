@@ -11,7 +11,7 @@ if (MSVC)
     endforeach()
 endif()
 
-SET (SOURCES
+SET (MAIN_SOURCES
     BuzzApp.cpp
     BuzzApp.h
     BuzzWindow.h
@@ -53,11 +53,27 @@ SET (PRETZEL_SOURCES
     ${CMAKE_SOURCE_DIR}/cinder/blocks/PretzelGui/src/pretzel/PretzelGui.h
     )
 
+SET (DIALOG_SOURCES
+    dialogs/ObjectInputerDlg.cpp
+    dialogs/ObjectInputerDlg.h
+    dialogs/ObjectSettingsDlg.cpp
+    dialogs/ObjectSettingsDlg.h
+    dialogs/WindowSettingsDlg.cpp
+    dialogs/WindowSettingsDlg.h
+    dialogs/BuzzDialog.h
+    dialogs/BuzzDialog.cpp
+    dialogs/BuzzCustomGui.h
+    dialogs/BuzzCustomGui.cpp
+)
+
+SET (SOURCES ${MAIN_SOURCES} ${PRETZEL_SOURCES} ${DIALOG_SOURCES})
+
 # [Visual studio specific]group the source into solution folder
 source_group(PretzelGui FILES ${PRETZEL_SOURCES})
+source_group(dialogs FILES ${DIALOG_SOURCES})
 
 # define project's build target with project's source files
-add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${PRETZEL_SOURCES})
+add_executable(${PROJECT_NAME} WIN32 ${SOURCES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/cinder/blocks/PretzelGui/src)

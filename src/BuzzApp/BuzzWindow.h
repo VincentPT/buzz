@@ -2,26 +2,21 @@
 #include <string>
 #include "cinder/app/Renderer.h"
 #include "cinder/gl/gl.h"
-#include "pretzel/PretzelGui.h"
+#include "dialogs/ObjectInputerDlg.h"
+#include "dialogs/ObjectSettingsDlg.h"
+#include "dialogs/WindowSettingsDlg.h"
 
 class BuzzWindow
 {
-	ci::app::WindowRef			_nativeWindow;
-	pretzel::PretzelGuiRef		_windowSettings;
-	pretzel::PretzelGuiRef		_objectSettings;
-	pretzel::PretzelGuiRef		_objecInputer;
+	ci::app::WindowRef						_nativeWindow;	
+	ci::ColorA*								_bckColor;
 
-	ci::ColorA					_bckColor;
-
-	ci::ColorA					_objBckColor;
-	ci::ColorA					_objLineColor;
-
-	std::string					_objectAddress;
-	std::vector<std::string>    _objectTypes;
-	int                         _objectTypeIdx = 0;
+	std::shared_ptr<WindowSettingsDlg>		_windowSettingsDlgRef;
+	std::shared_ptr<ObjectSettingsDlg>		_objectSettingsDlgRef;
+	std::shared_ptr<ObjectInputerDlg>		_objectInputerDlgRef;
+	
 private:
 	void onAddObjectButtonPress();
-	void onCloseButtonPress();
 protected:
 	void setupWindow();
 public:

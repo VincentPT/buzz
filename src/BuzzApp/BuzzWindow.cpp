@@ -28,41 +28,30 @@ BuzzWindow::~BuzzWindow()
 }
 
 void BuzzWindow::setupWindow() {
-	_bckColor = Color::white();
 	// window settings gui
-	_windowSettings = pretzel::PretzelGui::create("Window settings", 300, 500, _nativeWindow);
-	_windowSettings->setVisible(false);
+	_windowSettingsDlgRef = std::make_shared<WindowSettingsDlg>(_nativeWindow);
+	_windowSettingsDlgRef->hide();
 
 	// object settings gui
-	_objectSettings = pretzel::PretzelGui::create("Object settings", 300, 500, _nativeWindow);
-	_objectSettings->setVisible(false);
+	_objectSettingsDlgRef = std::make_shared<ObjectSettingsDlg>(_nativeWindow);
+	_objectSettingsDlgRef->hide();
 
 	// add object gui
-	_objecInputer = pretzel::PretzelGui::create("Add object", 300, 500, _nativeWindow);
-	_objecInputer->setVisible(false);
+	_objectInputerDlgRef = std::make_shared<ObjectInputerDlg>(_nativeWindow);
+	_objectInputerDlgRef->hide();
 
-	// add components to window settings gui
-	_windowSettings->addColorPicker("Background Color", &_bckColor);
-	_windowSettings->addSaveLoad();
-	_windowSettings->loadSettings();
-
-	// add components to object settings gui
-	_objectSettings->addColorPicker("object background color", &_objBckColor);
-	_objectSettings->addColorPicker("object line color", &_objLineColor);
-
-	// add components to adding object gui
-	_objectTypes = { "OpenCV Mat", "OpenCV Rect", "OpenCV Contour" };
-	_objecInputer->addTextField("Address", &_objectAddress, true);
-	_objecInputer->addEnum("Object type", &_objectTypes, &_objectTypeIdx);
-	_objecInputer->addButton("Add", &BuzzWindow::onAddObjectButtonPress, this);
-	_objecInputer->addButton("Close", &BuzzWindow::onCloseButtonPress, this);
+	_bckColor = &_windowSettingsDlgRef->getBckColor();
 
 	// setup user's event
 	_nativeWindow->getSignalKeyDown().connect([this](KeyEvent& e) {
 		if (e.getCode() == KeyEvent::KEY_b) {
-			_windowSettings->setVisible(true);
-			//_objectSettings->setVisible(true);
-			//_objecInputer->setVisible(true);
+			_windowSettingsDlgRef->show();
+		}
+		else if (e.getCode() == KeyEvent::KEY_o) {
+			_objectSettingsDlgRef->show();
+		}
+		else if (e.getCode() == KeyEvent::KEY_i) {
+			_objectInputerDlgRef->show();
 		}
 	});
 }
@@ -78,16 +67,12 @@ BuzzWindow& BuzzWindow::setSize(int width, int height) {
 }
 
 void BuzzWindow::draw() {
-	gl::clear(_bckColor);
-	_windowSettings->draw();
-	_objectSettings->draw();
-	_objecInputer->draw();
+	gl::clear(*_bckColor);
+	_windowSettingsDlgRef->display();
+	_objectSettingsDlgRef->display();
+	_objectInputerDlgRef->display();
 }
 
 void BuzzWindow::onAddObjectButtonPress() {
 
-}
-
-void BuzzWindow::onCloseButtonPress() {
-	_objecInputer->setVisible(false);
 }
