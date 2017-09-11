@@ -31,10 +31,10 @@ public:
 	void stopMonitor();
 
 	// register monitor ansi text format in clipboard
-	void connect(std::function<void(const std::string&)>&& ansiTextdHandler);
+	void connectANSI(std::function<void(const std::string&)>&& ansiTextdHandler);
 	// register monitor unicode text format in clipboard
-	void connect(std::function<void(const std::wstring&)>&& unicodeTextHandler);
+	void connectUnicode(std::function<void(const std::wstring&)>&& unicodeTextHandler);
 	// register monitor bitmap format in clipboard
-	void connect(std::function<void(HBITMAP)>&& bitmapHandler);
+	void connectBitmap(std::function<void(HBITMAP)>&& bitmapHandler);
 };
 

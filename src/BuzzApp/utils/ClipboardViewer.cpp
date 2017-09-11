@@ -84,7 +84,7 @@ void ClipboardViewer::stopMonitor() {
 	ChangeClipboardChain(_hwnd, _hwndNext);
 }
 
-void ClipboardViewer::connect(std::function<void(const std::string&)>&& ansiTextdHandler) {
+void ClipboardViewer::connectANSI(std::function<void(const std::string&)>&& ansiTextdHandler) {
 	_ansiTextHandler = ansiTextdHandler;
 	auto it = std::find(_registeredFormats.begin(), _registeredFormats.end(), CF_TEXT);
 	if (it == _registeredFormats.end()) {
@@ -93,7 +93,7 @@ void ClipboardViewer::connect(std::function<void(const std::string&)>&& ansiText
 }
 
 // register monitor unicode text format in clipboard
-void ClipboardViewer::connect(std::function<void(const std::wstring&)>&& unicodeTextHandler) {
+void ClipboardViewer::connectUnicode(std::function<void(const std::wstring&)>&& unicodeTextHandler) {
 	_unicodeTextHandler = unicodeTextHandler;
 	auto it = std::find(_registeredFormats.begin(), _registeredFormats.end(), CF_UNICODETEXT);
 	if (it == _registeredFormats.end()) {
@@ -102,7 +102,7 @@ void ClipboardViewer::connect(std::function<void(const std::wstring&)>&& unicode
 }
 
 // register monitor bitmap format in clipboard
-void ClipboardViewer::connect(std::function<void(HBITMAP)>&& bitmapHandler) {
+void ClipboardViewer::connectBitmap(std::function<void(HBITMAP)>&& bitmapHandler) {
 	_bitmapHandler = bitmapHandler;
 	auto it = std::find(_registeredFormats.begin(), _registeredFormats.end(), CF_BITMAP);
 	if (it == _registeredFormats.end()) {

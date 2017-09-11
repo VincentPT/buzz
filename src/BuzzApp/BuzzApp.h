@@ -15,4 +15,5 @@ public:
 	void keyDown(ci::app::KeyEvent event);
 	void draw();
 	void createNewWindow();
+	void onClipboardTextChanged(const std::string& text);
 };

@@ -156,6 +156,8 @@ bool SpyClient::startMonitorProcess(const char* processName, const std::string& 
 
 	// then, calculate function address in remote process
 	_spyRootRemote = (char*)rootBaseModule + spyRootRelativeAddress;
+
+	cout << "monitor process " << processName << " started!" << std::endl;
 	return true;
 }
 
@@ -219,7 +221,7 @@ bool SpyClient::executeRemoteCommand(void* remoteProc, const void* data, int dat
 	ScopeAutoFunction<function<void()>> autoFreeRemoteBufer([&]() {
 		if (pRemoteData != nullptr && pptrRemote != nullptr) {
 			if (VirtualFreeEx(_hTargetProcess, pRemoteData, dataSize, MEM_RELEASE) == FALSE) {
-				cout << "error in deallocate memory in remote process, GLE=" << GetLastError() << std::endl;
+				cout << "[executeRemoteCommand]error in deallocate memory " << pRemoteData << " in remote process, GLE=" << GetLastError() << std::endl;
 			}
 		}
 	});
@@ -295,7 +297,7 @@ int SpyClient::sendCommandToRemoteThread(void* commandData, int commandSize, Ret
 	ScopeAutoFunction<function<void()>> autoFreeRemoteBufer([&]() {
 		if (pRemoteData != nullptr) {
 			if (VirtualFreeEx(_hTargetProcess, pRemoteData, commandSize, MEM_RELEASE) == FALSE) {
-				cout << "error in deallocate memory in remote process, GLE=" << GetLastError() << std::endl;
+				cout << "[sendCommandToRemoteThread]error in deallocate memory " << pRemoteData << " in remote process, GLE=" << GetLastError() << std::endl;
 			}
 		}
 	});

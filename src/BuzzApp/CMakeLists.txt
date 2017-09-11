@@ -73,6 +73,7 @@ SET (UTILITIES
     utils/SpyClient.cpp
     utils/SpyClient.h
     utils/string_util.hpp
+    utils/string_util.cpp
     utils/ScopeAutoFunction.hpp
     utils/BuzzSpyClient.cpp
     utils/BuzzSpyClient.h

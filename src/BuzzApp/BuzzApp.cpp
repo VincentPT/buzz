@@ -1,10 +1,16 @@
 #include "BuzzApp.h"
+#include <stdio.h>
+#include <io.h>
+#include <fcntl.h>
+
 #include "cinder/app/RendererGl.h"
 #include "cinder/gl/gl.h"
 #include "cinder/Rand.h"
 #include <list>
 #include "BuzzWindow.h"
 #include "utils/ClipboardViewer.h"
+
+#include "utils/string_util.hpp"
 
 using namespace ci;
 using namespace ci::app;
@@ -15,8 +21,33 @@ BuzzApp::BuzzApp() {
 BuzzApp::~BuzzApp() {
 }
 
+void setupConsole() {
+	//AllocConsole();
+
+	//HANDLE handle_out = GetStdHandle(STD_OUTPUT_HANDLE);
+	//int hCrt = _open_osfhandle((intptr_t)handle_out, _O_TEXT);
+	//FILE* hf_out = _fdopen(hCrt, "w");
+	//setvbuf(hf_out, NULL, _IONBF, 1);
+	//*stdout = *hf_out;
+
+	//HANDLE handle_in = GetStdHandle(STD_INPUT_HANDLE);
+	//hCrt = _open_osfhandle((intptr_t)handle_in, _O_TEXT);
+	//FILE* hf_in = _fdopen(hCrt, "r");
+	//setvbuf(hf_in, NULL, _IONBF, 128);
+	//*stdin = *hf_in;
+
+	AllocConsole();
+	freopen("CONIN$", "r", stdin);
+	freopen("CONOUT$", "w", stdout);
+	freopen("CONOUT$", "w", stderr);
+}
+
 void BuzzApp::setup()
-{	
+{
+	using namespace std::placeholders;
+
+	setupConsole();
+
 	WindowRef defaultNativeWindow = getWindow();
 
 	auto firstWindow = new BuzzWindow(defaultNativeWindow);
@@ -24,52 +55,11 @@ void BuzzApp::setup()
 
 	ClipboardViewer* clipboardViewer = ClipboardViewer::getInstance();
 	// register ANSI text handler
-	clipboardViewer->connect([this](const string& text) {
-		auto activeWindow = this->getForegroundWindow();
-		
-		void* address = ObjectInputerDlg::convertToAddress(text);
-		if (address != nullptr) {
-			auto buzzWindow = activeWindow->getUserData<BuzzWindow>();
-			buzzWindow->showInputerWithAddress(address);
-		}
-	});
-
-	
-	//FILE* fp = NULL;
-	//fopen_s(&fp, "img.dat", "rb");
-	//if (fp != NULL) {
-	//	fseek(fp, 0, SEEK_END);
-	//	auto fileSize = ftell(fp);
-	//	fseek(fp, 0, SEEK_SET);
-
-	//	uint8_t* data = (uint8_t*) malloc(fileSize);
-	//	fread_s(data, fileSize, 1, fileSize, fp);
-
-	//	Surface mySurface(data, 717, 478, 2151, cinder::SurfaceChannelOrder::BGR);
-	//	firstWindowData->_tex = gl::Texture2d::create(mySurface);
-
-	//	fclose(fp);
-
-	//	free(data);
-	//}
-
-	//createNewWindow();
+	clipboardViewer->connectANSI(std::bind(&BuzzApp::onClipboardTextChanged, this, _1));
 }
 
 void BuzzApp::createNewWindow()
 {
-	//auto secondWindowData = new WindowData;
-	//app::WindowRef newWindow = createWindow( Window::Format().size( 400, 400 ) );
-	//newWindow->setUserData(secondWindowData);
-
-	//secondWindowData->_tex = gl::Texture2d::create(loadImage("C:\\Users\\minh\\Pictures\\sample1_l.jpg"));
-	//
-	//// for demonstration purposes, we'll connect a lambda unique to this window which fires on close
-	//int uniqueId = getNumWindows();
-	//newWindow->getSignalClose().connect(
-	//		[uniqueId,this] { this->console() << "You closed window #" << uniqueId << std::endl; }
-	//	);
-	
 	auto newWindow = new BuzzWindow("buzz#" + std::to_string(getNumWindows()), 960, 540);
 }
 
@@ -88,22 +78,67 @@ void BuzzApp::keyDown( KeyEvent event )
 
 void BuzzApp::draw()
 {
-	//gl::clear( Color( 0.1f, 0.1f, 0.15f ) );
-	
 	auto currentNativeWindow = getWindow();
 	auto currentWindow = currentNativeWindow->getUserData<BuzzWindow>();
 	currentWindow->draw();
+}
 
-	/*if (data->_tex) {
-		gl::draw(data->_tex);
-	}*/
+void BuzzApp::onClipboardTextChanged(const std::string& text) {
+	auto activeWindow = this->getForegroundWindow();
+	cout << "process for changing text in clipboard" << std::endl;
 
-	/*gl::color( data->mColor );	
-	gl::begin( GL_LINE_STRIP );
-	for( auto pointIter = data->mPoints.begin(); pointIter != data->mPoints.end(); ++pointIter ) {
-		gl::vertex( *pointIter );
+	void* address = ObjectInputerDlg::convertToAddress(text);
+	if (address != nullptr) {
+		auto buzzWindow = activeWindow->getUserData<BuzzWindow>();
+		buzzWindow->showInputerWithAddress(address);
 	}
-	gl::end();*/
+	else {
+		cout << "check clipboard for visual studio copied text" << std::endl;
+		// parse string copy from a row in Watch window of visual studio
+		vector<string> elems;
+		split(text, '\t', elems);
+
+		if (elems.size() == 5) {
+			auto name = elems[2];
+			auto value = elems[3];
+			auto stype = elems[4];
+			if (stype.size() >= 2) {
+				// remove end line characters at the end of last elemenet.
+				stype.erase(stype.size() - 2, 2);
+			}
+
+			map<string, int> supportedTypes = {
+				{ "cv::Mat *", 0},
+				{ "const cv::Mat *", 0 },
+			};
+			auto it = supportedTypes.find(stype);
+
+			if (it != supportedTypes.end()) {
+				int type = it->second;
+				auto spaceIdx = value.find(' ');
+				// there is must be a space between address and object information
+				if (spaceIdx == string::npos) {
+					cout << "unrecognize text" << std::endl;
+					return;
+				}
+
+				// get the address in value variable and convert it into address
+				address = ObjectInputerDlg::convertToAddress(value.substr(0, spaceIdx));
+				// check if the string is a valid pointer
+				if (address == nullptr) {
+					cout << "invalid pointer" << std::endl;
+					return;
+				}
+				cout << "parse text successfully" << std::endl;
+
+				auto buzzWindow = activeWindow->getUserData<BuzzWindow>();
+				buzzWindow->readObject(address, type);
+			}
+			else {
+				cout << "unsupported object in clipboard" << std::endl;
+			}
+		}
+	}
 }
 
 // This line tells Cinder to actually create the application
