@@ -16,6 +16,7 @@ SET (MAIN_SOURCES
     BuzzApp.h
     BuzzWindow.h
     BuzzWindow.cpp
+    BuzzWindow_PartReadObjects.cpp
     Resources.h
     resources/Resources.rc)
 
