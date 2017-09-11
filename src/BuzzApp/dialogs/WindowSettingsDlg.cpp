@@ -42,5 +42,9 @@ WindowSettingsDlg& WindowSettingsDlg::setProcessName(const std::string& processN
 }
 
 void WindowSettingsDlg::onMonitorButtonPress() {
+	_onMonitorButtonPress(this);
+}
 
+ButtonClickEventHandler& WindowSettingsDlg::getMonitorButtonSignal() {
+	return _onMonitorButtonPress;
 }

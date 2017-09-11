@@ -5,6 +5,7 @@ class WindowSettingsDlg : public BuzzDialog {
 	// window's background color
 	ci::ColorA					_bckColor;
 	std::string					_processName;
+	ButtonClickEventHandler		_onMonitorButtonPress;
 private:
 	void onMonitorButtonPress();
 public:
@@ -20,4 +21,6 @@ public:
 
 	std::string getProcessName() const;
 	WindowSettingsDlg& setProcessName(const std::string& processName);
+
+	ButtonClickEventHandler& getMonitorButtonSignal();
 };

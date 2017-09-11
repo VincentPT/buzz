@@ -73,6 +73,8 @@ SET (UTILITIES
     utils/SpyClient.h
     utils/string_util.hpp
     utils/ScopeAutoFunction.hpp
+    utils/BuzzSpyClient.cpp
+    utils/BuzzSpyClient.h
 )
 
 SET (SOURCES ${MAIN_SOURCES} ${PRETZEL_SOURCES} ${DIALOG_SOURCES} ${UTILITIES})

@@ -1,6 +1,7 @@
 #include "ObjectInputerDlg.h"
 #include "BuzzCustomGui.h"
 #include "utils/string_util.hpp"
+#include "utils/BuzzSpyClient.h"
 
 using namespace ci;
 using namespace ci::app;
@@ -10,18 +11,9 @@ ObjectInputerDlg::ObjectInputerDlg(ci::app::WindowRef window) :
 	pretzel::PretzelGuiRef nativeDlg = getNative();
 
 	_objectTypes = { "OpenCV Mat", "OpenCV Rect", "OpenCV Contour" };
-	_pixelFormats = {
-		"RGB",
-		"BGR",
-		"GrayScale",
-		"RGBA",
-		"BGRA",
-		"HSV",
-		"YUV"};
 
 	nativeDlg->addTextField("Address", &_objectAddress, true);
 	nativeDlg->addEnum("Object type", &_objectTypes, &_objectTypeIdx);
-	nativeDlg->addEnum("Pixel format", &_pixelFormats, &_pixelFormatIdx);
 	nativeDlg->addButton("Add", &ObjectInputerDlg::onAddObjectButtonPress, this);
 	nativeDlg->addButton("Close", &BuzzDialog::onClose, (BuzzDialog*)this);
 }
@@ -37,16 +29,9 @@ ObjectInputerDlg& ObjectInputerDlg::setSelectedTypeIndex(int idx) {
 }
 
 void ObjectInputerDlg::onAddObjectButtonPress() {
-
-}
-
-RawDataPixelFormat ObjectInputerDlg::getPixelFormat() const {
-	return (RawDataPixelFormat)_pixelFormatIdx;
-}
-
-ObjectInputerDlg& ObjectInputerDlg::getSelectedPixelFormat(RawDataPixelFormat pixelFormat) {
-	_pixelFormatIdx = (int)pixelFormat;
-	return *this;
+	if (_onAddObjectBtnClick) {
+		_onAddObjectBtnClick(this);
+	}
 }
 
 void* ObjectInputerDlg::getObjectAddress() const {
@@ -92,9 +77,9 @@ void* ObjectInputerDlg::convertToAddress(const std::string& address) {
 	}
 
 	// invaid pointer address in x64 platform
-	if (sizeof(void*) == 8 && number < 0x100000000) {
-		return nullptr;
-	}
+	//if (sizeof(void*) == 8 && number < 0x100000000) {
+	//	return nullptr;
+	//}
 
 	return (void*)number;
 }
@@ -105,4 +90,9 @@ ObjectInputerDlg& ObjectInputerDlg::setObjectAddress(void* address) {
 		<< std::hex << address;
 	_objectAddress = ss.str();
 	return *this;
+}
+
+
+ButtonClickEventHandler& ObjectInputerDlg::getAddObjectButtonSignal() {
+	return _onAddObjectBtnClick;
 }

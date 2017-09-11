@@ -3,14 +3,24 @@
 
 #include <iostream>
 
-#include <opencv2\core.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
 
 // using namespaces
 using namespace std;
 using namespace cv;
 
 ReturnData readMatObject(void* objectAddres) {
-	Mat& img = *(Mat*)objectAddres;
+	Mat& originImg = *(Mat*)objectAddres;
+	Mat img = originImg;
+
+	// currently, we change gray scale to color image
+	// because some image lib, is not support load gray scale
+	//if (img.channels() == 1) {
+	//	Mat imgTmp;
+	//	cvtColor(originImg, imgTmp, CV_GRAY2BGR);
+	//	img = imgTmp;
+	//}
 
 	int stride = img.step[0];
 	size_t sizeInBytes = stride * img.rows;

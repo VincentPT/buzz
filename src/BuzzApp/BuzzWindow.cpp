@@ -1,5 +1,6 @@
 #include "BuzzWindow.h"
 #include "utils/ClipboardViewer.h"
+#include "pretzel/PretzelGui.h"
 
 using namespace ci;
 using namespace ci::app;
@@ -45,14 +46,18 @@ void BuzzWindow::setupWindow() {
 	// add object gui
 	_objectInputerDlgRef = std::make_shared<ObjectInputerDlg>(_nativeWindow);
 	_objectInputerDlgRef->hide();
-	_objectInputerDlgRef->setObjectAddress((void*)0x12345678);
 
 	_bckColor = &_windowSettingsDlgRef->getBckColor();
+	_windowSettingsDlgRef->getMonitorButtonSignal() = std::bind(&BuzzWindow::onStartMonitorProcess, this, _1);
+	_objectInputerDlgRef->getAddObjectButtonSignal() = std::bind(&BuzzWindow::onAddObjectClick, this, _1);
 	
 	// setup user's event
 	_nativeWindow->getSignalKeyDown().connect(std::bind(&BuzzWindow::onKeyPress, this, _1));
 
 	_nativeWindow->getSignalClose().connect(std::bind(&BuzzWindow::onClose, this));
+
+	//onStartMonitorProcess(nullptr);
+	//onAddObjectClick(nullptr);
 }
 
 BuzzWindow& BuzzWindow::setTitle(const std::string& title) {
@@ -67,18 +72,22 @@ BuzzWindow& BuzzWindow::setSize(int width, int height) {
 
 void BuzzWindow::draw() {
 	gl::clear(*_bckColor);
-	_windowSettingsDlgRef->display();
-	_objectSettingsDlgRef->display();
-	_objectInputerDlgRef->display();
+	//gl::clear(Color(0.1f, 0.1f, 0.15f));
+	
+	//_windowSettingsDlgRef->display();
+	//_objectSettingsDlgRef->display();
+	//_objectInputerDlgRef->display();
+
+	if (_tex) {
+		gl::draw(_tex);
+	}
+
+	pretzel::PretzelGui::drawAll();	
 }
 
 void BuzzWindow::showInputerWithAddress(void* address) {	
 	_objectInputerDlgRef->setObjectAddress(address);
 	_objectInputerDlgRef->show();
-}
-
-void BuzzWindow::onAddObjectButtonPress() {
-
 }
 
 void BuzzWindow::onKeyPress(KeyEvent& e) {
@@ -127,4 +136,28 @@ void BuzzWindow::onClose() {
 			break;
 		}
 	}
+}
+
+void BuzzWindow::onStartMonitorProcess(BuzzDialog* sender) {
+	if (!_spyClient) {
+		_spyClient = std::make_shared<BuzzSpyClient>();
+	}
+
+	auto& currentMonitorProcessName = _spyClient->getProcessName();
+	auto desireProcessName = _windowSettingsDlgRef->getProcessName();
+
+	if (desireProcessName != currentMonitorProcessName) {
+		_spyClient->stopMonitorProcess();
+		_spyClient->startMonitorProcess(desireProcessName.c_str());
+	}
+	else if (_spyClient->checkTargetAvaible() == false) {
+		_spyClient->startMonitorProcess(desireProcessName.c_str());
+	}
+}
+
+void BuzzWindow::onAddObjectClick(BuzzDialog* sender) {	
+	void* desireReadObjectAddress = _objectInputerDlgRef->getObjectAddress();
+	int type = _objectInputerDlgRef->getSelectedTypeIndex();
+
+	readObject(desireReadObjectAddress, type);
 }

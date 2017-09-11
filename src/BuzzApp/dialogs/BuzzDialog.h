@@ -1,5 +1,9 @@
 #pragma once
 #include "cinder/app/app.h"
+#include <functional>
+
+class BuzzDialog;
+typedef std::function<void(BuzzDialog* sender)> ButtonClickEventHandler;
 
 class BuzzCustomGui;
 typedef std::shared_ptr<BuzzCustomGui> BuzzCustomGuiRef;

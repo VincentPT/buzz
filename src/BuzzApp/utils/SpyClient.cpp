@@ -11,12 +11,30 @@
 
 using namespace std;
 
+int inline ReadDataFromRemoteProcess(HANDLE hProcess, void* remoteAddress, void* localBuffer, int size) {
+	BOOL readWriteResult;
+	SIZE_T numberOfBytes;
+
+	readWriteResult = ::ReadProcessMemory(hProcess, remoteAddress, localBuffer, (SIZE_T) size, &numberOfBytes);
+	if (readWriteResult == FALSE) {
+		cout << "cannot read data to remote process, GLE=" << GetLastError() << std::endl;
+		return -1;
+	}
+	if (numberOfBytes != size) {
+		cout << "error in reading data to remote process, GLE=" << GetLastError() << std::endl;
+		return -1;
+	}
+
+	return 0;
+}
+
 SpyClient::SpyClient() : _hTargetProcess(nullptr), _dwProcessId(0), _spyRootRemote(nullptr) {
 }
 
-SpyClient* SpyClient::getInstance() {
-	static SpyClient client;
-	return &client;
+SpyClient::~SpyClient() {
+	if (_hTargetProcess != nullptr) {
+		CloseHandle(_hTargetProcess);
+	}
 }
 
 DWORD SpyClient::getProcessByName(const char* processName) {
@@ -117,18 +135,42 @@ bool SpyClient::startMonitorProcess(const char* processName, const std::string& 
 	// base on module base and relative offset between module base
 	// and addres of the function is current process
 	HMODULE localHandle = LoadLibraryA(_rootSpyDllPath.c_str());
+	if (localHandle == nullptr) {
+		printf_s("%s cannot be loadded\n", _rootSpyDllPath.c_str());
+		return false;
+	}
+
+	ScopeAutoFunction<std::function<void()>> autoFreeLib = [localHandle]() {
+		// free the library in current process after the scope exit
+		FreeLibrary(localHandle);
+	};
+
 	void* spyRootLocal = GetProcAddress(localHandle, "spyRoot");
+	if (spyRootLocal == nullptr) {
+		printf_s("%s is not valid\n", _rootSpyDllPath.c_str());
+		return false;
+	}
 
 	// releative offset between module base and the function address
 	size_t spyRootRelativeAddress = (size_t)spyRootLocal - (size_t)localHandle;
 
 	// then, calculate function address in remote process
 	_spyRootRemote = (char*)rootBaseModule + spyRootRelativeAddress;
-
-	// free the library in current process, we don't need it any more
-	FreeLibrary(localHandle);
-
 	return true;
+}
+
+bool SpyClient::stopMonitorProcess() {
+	if (_hTargetProcess != NULL) {
+		BOOL res = CloseHandle(_hTargetProcess);
+		_hTargetProcess = NULL;
+		return res != FALSE;
+	}
+
+	return false;
+}
+
+bool SpyClient::restartMonitorProcess() {
+	return startMonitorProcess(_processName.c_str(), _rootSpyDllPath, _dependencyDllPaths);
 }
 
 bool SpyClient::checkTargetAvaible() {
@@ -138,11 +180,11 @@ bool SpyClient::checkTargetAvaible() {
 		return false;
 	}
 
-	DWORD exitCode;
-	// check if the process is still alive
-	if (GetExitCodeProcess(_hTargetProcess, &exitCode) != STILL_ACTIVE) {
-		return false;
-	}
+	//DWORD exitCode;
+	//// check if the process is still alive
+	//if (GetExitCodeProcess(_hTargetProcess, &exitCode) != STILL_ACTIVE) {
+	//	return false;
+	//}
 
 	// the process handle is now available but may be it is not the target process
 	if (GetProcessId(_hTargetProcess) != _dwProcessId) {
@@ -165,6 +207,10 @@ bool SpyClient::checkTargetAvaible() {
 }
 
 bool SpyClient::executeRemoteCommand(void* remoteProc, const void* data, int dataSize, DWORD* executeResult, void** pptrRemote) {
+	if (_hTargetProcess == nullptr) {
+		cout << "Invalid process handle" << std::endl;
+		return false;
+	}
 	HANDLE hThread;
 	void*   pRemoteData = nullptr;
 	SIZE_T numberOfBytes;
@@ -209,8 +255,10 @@ bool SpyClient::executeRemoteCommand(void* remoteProc, const void* data, int dat
 	}
 
 	::WaitForSingleObject(hThread, INFINITE);
-	
-	::GetExitCodeThread(hThread, executeResult);
+
+	if (executeResult) {
+		::GetExitCodeThread(hThread, executeResult);
+	}
 
 	// Clean up
 	::CloseHandle(hThread);
@@ -228,7 +276,8 @@ HMODULE SpyClient::injectDLL(const std::string& dllPath) {
 
 		HMODULE hKernel32 = ::GetModuleHandle("Kernel32");
 		void* remoteLoadLibraryFuncAddress = ::GetProcAddress(hKernel32, "LoadLibraryA");
-		bool res = executeRemoteCommand(remoteLoadLibraryFuncAddress, dllPath.c_str(), (int)(dllPath.size() + 1), nullptr);
+		DWORD moduleBase32 = 0;
+		bool res = executeRemoteCommand(remoteLoadLibraryFuncAddress, dllPath.c_str(), (int)(dllPath.size() + 1), &moduleBase32);
 		if (res == false) {
 			cout << "inject dll '" << dllPath << "' failed" << std::endl;
 			return nullptr;
@@ -239,12 +288,9 @@ HMODULE SpyClient::injectDLL(const std::string& dllPath) {
 	return hRemoteLib;
 }
 
-int SpyClient::sendCommandToRemoteThread(void* commandData, int commandSize, ReturnData* pReturnData) {
+int SpyClient::sendCommandToRemoteThread(void* commandData, int commandSize, ReturnData* pReturnData, DWORD* executeResult) {
 	void*   pRemoteData = nullptr;
-	SIZE_T numberOfBytes;
-	DWORD exitCode;
-	BOOL readWriteResult;
-	
+
 	// auto free remote buffer function
 	ScopeAutoFunction<function<void()>> autoFreeRemoteBufer([&]() {
 		if (pRemoteData != nullptr) {
@@ -254,7 +300,7 @@ int SpyClient::sendCommandToRemoteThread(void* commandData, int commandSize, Ret
 		}
 	});
 
-	bool res = executeRemoteCommand(_spyRootRemote, commandData, commandSize, &exitCode, &pRemoteData);
+	bool res = executeRemoteCommand(_spyRootRemote, commandData, commandSize, executeResult, &pRemoteData);
 	if (res == false) {
 		cout << "execute spy root function failed, GLE=" << GetLastError() << std::endl;
 		return -1;
@@ -263,20 +309,57 @@ int SpyClient::sendCommandToRemoteThread(void* commandData, int commandSize, Ret
 	if (pReturnData) {
 		constexpr int returnDataOffset = offsetof(CustomCommandCmdData, returnData);
 		void* returnDataRemote = (char*)pRemoteData + returnDataOffset;
-		readWriteResult = ::ReadProcessMemory(_hTargetProcess, returnDataRemote, pReturnData, sizeof(ReturnData), &numberOfBytes);
-		if (readWriteResult == FALSE) {
-			cout << "cannot read data to remote process, GLE=" << GetLastError() << std::endl;
-			return -1;
-		}
-		if (numberOfBytes != sizeof(ReturnData)) {
-			cout << "error in reading data to remote process, GLE=" << GetLastError() << std::endl;
-			return -1;
+
+		int iRes = ReadDataFromRemoteProcess(_hTargetProcess, returnDataRemote, pReturnData, sizeof(ReturnData));
+		if (iRes != 0) {
+			return iRes;
 		}
 	}
 
-	return exitCode;
+	return 0;
 }
 
-int SpyClient::sendCommandToRemoteThread(BaseCmdData* commandData, ReturnData* pReturnData) {
-	return sendCommandToRemoteThread(commandData, commandData->commandSize, pReturnData);
+int SpyClient::sendCommandToRemoteThread(BaseCmdData* commandData, ReturnData* pReturnData, DWORD* executeResult) {
+	return sendCommandToRemoteThread(commandData, commandData->commandSize, pReturnData, executeResult);
+}
+
+int SpyClient::readCustomCommandResult(ReturnData* pReturnData, void** ppCustomData) {
+	if (_hTargetProcess == nullptr) {
+		cout << "Invalid process handle" << std::endl;
+		return -1;
+	}
+
+	if (pReturnData == nullptr) {
+		cout << "null result pointer" << std::endl;
+		return -1;
+	}
+
+	if (ppCustomData == nullptr) {
+		cout << "null buffer pointer" << std::endl;
+		return -1;
+	}
+
+	void* localCustomData = malloc(pReturnData->sizeOfCustomData);
+	int iRes = ReadDataFromRemoteProcess(_hTargetProcess, pReturnData->customData, localCustomData, pReturnData->sizeOfCustomData);
+	if (iRes != 0) {
+		free(localCustomData);
+		*ppCustomData = nullptr;
+		return -1;
+	}
+	*ppCustomData = localCustomData;
+	return 0;
+}
+
+int SpyClient::freeCustomCommandResult(ReturnData* pReturnData) {
+	FreeBufferCmdData cmdData;
+	cmdData.commandSize = sizeof(FreeBufferCmdData);
+	cmdData.commandId = CommandId::FREE_BUFFER;
+	cmdData.bufferSize = pReturnData->sizeOfCustomData;
+	cmdData.buffer = pReturnData->customData;
+
+	return sendCommandToRemoteThread((BaseCmdData*)&cmdData);
+}
+
+const std::string& SpyClient::getProcessName() {
+	return _processName;
 }

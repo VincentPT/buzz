@@ -12,21 +12,29 @@ BuzzCustomGuiRef BuzzDialog::getNative() const {
 }
 
 void BuzzDialog::onClose() {
-	_nativeDlg->setVisible(false);
+	if (_nativeDlg) {
+		_nativeDlg->setVisible(false);
+	}
 }
 
 void BuzzDialog::show() {
-	_nativeDlg->setVisible(true);
+	if (_nativeDlg) {
+		_nativeDlg->setVisible(true);
+	}
 }
 
 void BuzzDialog::hide() {
-	_nativeDlg->setVisible(false);
+	if (_nativeDlg) {
+		_nativeDlg->setVisible(false);
+	}
 }
 
 void BuzzDialog::display() {
-	_nativeDlg->draw();
+	if (_nativeDlg && _nativeDlg->isVisible()) {
+		_nativeDlg->draw();
+	}
 }
 
 bool BuzzDialog::isVisible() {
-	return _nativeDlg->isVisible();
+	return (_nativeDlg && _nativeDlg->isVisible());
 }
