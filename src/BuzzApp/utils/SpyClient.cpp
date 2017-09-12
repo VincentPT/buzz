@@ -209,6 +209,7 @@ bool SpyClient::checkTargetAvaible() {
 }
 
 bool SpyClient::executeRemoteCommand(void* remoteProc, const void* data, int dataSize, DWORD* executeResult, void** pptrRemote) {
+	cout << __FUNCTION__ << std::endl;
 	if (_hTargetProcess == nullptr) {
 		cout << "Invalid process handle" << std::endl;
 		return false;
@@ -219,9 +220,9 @@ bool SpyClient::executeRemoteCommand(void* remoteProc, const void* data, int dat
 
 	// auto free remote buffer function
 	ScopeAutoFunction<function<void()>> autoFreeRemoteBufer([&]() {
-		if (pRemoteData != nullptr && pptrRemote != nullptr) {
-			if (VirtualFreeEx(_hTargetProcess, pRemoteData, dataSize, MEM_RELEASE) == FALSE) {
-				cout << "[executeRemoteCommand]error in deallocate memory " << pRemoteData << " in remote process, GLE=" << GetLastError() << std::endl;
+		if (pRemoteData != nullptr && pptrRemote == nullptr) {
+			if (VirtualFreeEx(_hTargetProcess, pRemoteData, 0, MEM_RELEASE) == FALSE) {
+				cout << "error in deallocate memory " << pRemoteData << " in remote process, GLE=" << GetLastError() << std::endl;
 			}
 		}
 	});
@@ -291,13 +292,14 @@ HMODULE SpyClient::injectDLL(const std::string& dllPath) {
 }
 
 int SpyClient::sendCommandToRemoteThread(void* commandData, int commandSize, ReturnData* pReturnData, DWORD* executeResult) {
+	cout << __FUNCTION__ << std::endl;
 	void*   pRemoteData = nullptr;
 
 	// auto free remote buffer function
 	ScopeAutoFunction<function<void()>> autoFreeRemoteBufer([&]() {
 		if (pRemoteData != nullptr) {
-			if (VirtualFreeEx(_hTargetProcess, pRemoteData, commandSize, MEM_RELEASE) == FALSE) {
-				cout << "[sendCommandToRemoteThread]error in deallocate memory " << pRemoteData << " in remote process, GLE=" << GetLastError() << std::endl;
+			if (VirtualFreeEx(_hTargetProcess, pRemoteData, 0, MEM_RELEASE) == FALSE) {
+				cout << "error in deallocate memory " << pRemoteData << " in remote process, GLE=" << GetLastError() << std::endl;
 			}
 		}
 	});
