@@ -15,7 +15,7 @@ ObjectInputerDlg::ObjectInputerDlg(ci::app::WindowRef window) :
 	nativeDlg->addTextField("Address", &_objectAddress, true);
 	nativeDlg->addEnum("Object type", &_objectTypes, &_objectTypeIdx);
 	nativeDlg->addButton("Add", &ObjectInputerDlg::onAddObjectButtonPress, this);
-	nativeDlg->addButton("Close", &BuzzDialog::onClose, (BuzzDialog*)this);
+	nativeDlg->addButton("Close", &BuzzDialog::onClose, (BuzzDialog*)this);	
 }
 
 ObjectInputerDlg::~ObjectInputerDlg() {}

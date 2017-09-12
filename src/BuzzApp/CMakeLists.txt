@@ -79,12 +79,26 @@ SET (UTILITIES
     utils/BuzzSpyClient.h
 )
 
-SET (SOURCES ${MAIN_SOURCES} ${PRETZEL_SOURCES} ${DIALOG_SOURCES} ${UTILITIES})
+SET (DRAWOBJS
+    drawobjs/BuzzContainer.cpp
+    drawobjs/BuzzContainer.h
+    drawobjs/BuzzDrawObj.cpp
+    drawobjs/BuzzDrawObj.h
+    drawobjs/BuzzPoint.cpp
+    drawobjs/BuzzPoint.h
+    drawobjs/BuzzPolygon.cpp
+    drawobjs/BuzzPolygon.h
+    drawobjs/BuzzRect.cpp
+    drawobjs/BuzzRect.h
+)
+    
+SET (SOURCES ${MAIN_SOURCES} ${PRETZEL_SOURCES} ${DIALOG_SOURCES} ${UTILITIES} ${DRAWOBJS})
 
 # [Visual studio specific]group the source into solution folder
 source_group(PretzelGui FILES ${PRETZEL_SOURCES})
 source_group(dialogs FILES ${DIALOG_SOURCES})
 source_group(utils FILES ${UTILITIES})
+source_group(drawobjs FILES ${DRAWOBJS})
 
 # define project's build target with project's source files
 add_executable(${PROJECT_NAME} WIN32 ${SOURCES})

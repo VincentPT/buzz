@@ -10,6 +10,11 @@ public:
 	~BuzzSpyClient();
 
 	bool startMonitorProcess(const char* processName);
-
+	
 	int readCVMat(void* address, const std::function<void(ImageRawData*&)>& handler);
+	int readCVPoint(void* address, const std::function<void(PointRawData*&)>& handler);
+	int readCVPoint2f(void* address, const std::function<void(Point2fRawData*&)>& handler);
+	int readCVRect(void* address, const std::function<void(RectRawData*&)>& handler);
+	int readCVContour(void* address, const std::function<void(PointArrayRawData*&)>& handler);
+	int readCVContours(void* address, const std::function<void(PointsArrayRawData*&)>& handler);
 };

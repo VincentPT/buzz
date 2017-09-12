@@ -11,6 +11,7 @@
 #include "utils/ClipboardViewer.h"
 
 #include "utils/string_util.hpp"
+#include "spy_interfaces.h"
 
 using namespace ci;
 using namespace ci::app;
@@ -76,8 +77,11 @@ void BuzzApp::keyDown( KeyEvent event )
 		createNewWindow();
 }
 
-void BuzzApp::draw()
-{
+void BuzzApp::update() {
+
+}
+
+void BuzzApp::draw() {
 	auto currentNativeWindow = getWindow();
 	auto currentWindow = currentNativeWindow->getUserData<BuzzWindow>();
 	currentWindow->draw();
@@ -108,8 +112,18 @@ void BuzzApp::onClipboardTextChanged(const std::string& text) {
 			}
 
 			map<string, int> supportedTypes = {
-				{ "cv::Mat *", 0},
-				{ "const cv::Mat *", 0 },
+				{ "cv::Mat *", (int)CustomCommandId::OPENCV_READ_MAT_OBJECT},
+				{ "const cv::Mat *", (int)CustomCommandId::OPENCV_READ_MAT_OBJECT},
+				{ "cv::Rect_<int> *", (int)CustomCommandId::OPENCV_READ_CVRECT_OBJECT },
+				{ "const cv::Rect_<int> *", (int)CustomCommandId::OPENCV_READ_CVRECT_OBJECT },
+				{ "cv::Point_<int> *", (int)CustomCommandId::OPENCV_READ_CVPOINT_OBJECT },
+				{ "const cv::Point_<int> *", (int)CustomCommandId::OPENCV_READ_CVPOINT_OBJECT },
+				{ "std::vector<cv::Point_<int>,std::allocator<cv::Point_<int> > > *", (int)CustomCommandId::OPENCV_READ_CVCONTOUR },
+				{ "const std::vector<cv::Point_<int>,std::allocator<cv::Point_<int> > > *", (int)CustomCommandId::OPENCV_READ_CVCONTOUR },
+				{ "std::vector<std::vector<cv::Point_<int>,std::allocator<cv::Point_<int> > >,std::allocator<std::vector<cv::Point_<int>,std::allocator<cv::Point_<int> > > > > *", (int)CustomCommandId::OPENCV_READ_CVCONTOURS },
+				{ "const std::vector<std::vector<cv::Point_<int>,std::allocator<cv::Point_<int> > >,std::allocator<std::vector<cv::Point_<int>,std::allocator<cv::Point_<int> > > > > *", (int)CustomCommandId::OPENCV_READ_CVCONTOURS },
+				{ "cv::Point_<float> *", (int)CustomCommandId::OPENCV_READ_CVPOINT2F_OBJECT },
+				{ "const cv::Point_<float> *", (int)CustomCommandId::OPENCV_READ_CVPOINT2F_OBJECT },
 			};
 			auto it = supportedTypes.find(stype);
 

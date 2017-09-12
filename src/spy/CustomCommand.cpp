@@ -25,7 +25,12 @@ void loadCustomFunctions() {
 	if (_custom_funcs[0] != nullptr) {
 		return;
 	}
-	SET_CUSTOM_FUNCTION(CustomCommandId::OPENCV_READ_MAT_OBJECT, readMatObject);
+	SET_CUSTOM_FUNCTION(CustomCommandId::OPENCV_READ_MAT_OBJECT, readCVMatObject);
+	SET_CUSTOM_FUNCTION(CustomCommandId::OPENCV_READ_CVPOINT_OBJECT, readCVPointObject);
+	SET_CUSTOM_FUNCTION(CustomCommandId::OPENCV_READ_CVPOINT2F_OBJECT, readCVPointFObject);
+	SET_CUSTOM_FUNCTION(CustomCommandId::OPENCV_READ_CVRECT_OBJECT, readCVRectObject);
+	SET_CUSTOM_FUNCTION(CustomCommandId::OPENCV_READ_CVCONTOUR, readCVContour);
+	SET_CUSTOM_FUNCTION(CustomCommandId::OPENCV_READ_CVCONTOURS, readCVContours);
 }
 
 // this function use to invoke the corresponding custom function with the custom data

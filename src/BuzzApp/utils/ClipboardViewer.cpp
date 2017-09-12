@@ -1,5 +1,6 @@
 #include "ClipboardViewer.h"
-
+#include <iostream>
+using namespace std;
 
 ClipboardViewer* ClipboardViewer::getInstance() {
 	static ClipboardViewer clipboarViewer;
@@ -120,6 +121,7 @@ void ClipboardViewer::notifyClipboardChangeToHandlers() {
 	switch (format)
 	{
 	case CF_TEXT:
+		cout << "detect CF_TEXT changed" << std::endl;
 		if (OpenClipboard(_hwnd))
 		{
 			hglb = GetClipboardData(format);
@@ -130,8 +132,12 @@ void ClipboardViewer::notifyClipboardChangeToHandlers() {
 			GlobalUnlock(hglb);
 			CloseClipboard();
 		}
+		else {
+			cout << "!!!Error: Cannot open the clipboard, GLE=" << GetLastError() << std::endl;
+		}
 		break;
 	case CF_UNICODETEXT:
+		cout << "detect CF_UNICODETEXT changed" << std::endl;
 		if (OpenClipboard(_hwnd))
 		{
 			hglb = GetClipboardData(format);
@@ -142,9 +148,12 @@ void ClipboardViewer::notifyClipboardChangeToHandlers() {
 			GlobalUnlock(hglb);
 			CloseClipboard();
 		}
-		break;
+		else {
+			cout << "!!!Error: Cannot open the clipboard, GLE=" << GetLastError() << std::endl;
+		}		
 		break;
 	case CF_BITMAP:
+		cout << "detect CF_BITMAP changed" << std::endl;
 		if (OpenClipboard(_hwnd))
 		{
 			hbm = (HBITMAP)
@@ -154,9 +163,12 @@ void ClipboardViewer::notifyClipboardChangeToHandlers() {
 
 			CloseClipboard();
 		}
-
+		else {
+			cout << "!!!Error: Cannot open the clipboard, GLE=" << GetLastError() << std::endl;
+		}
 		break;
 	default:
+		cout << "Unsupport clipboard format" << std::endl;
 		break;
 	}
 }

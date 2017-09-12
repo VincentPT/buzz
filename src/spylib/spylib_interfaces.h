@@ -19,4 +19,31 @@ struct ImageRawData {
     char data[2];
 };
 
+struct PointRawData {
+	int x;
+	int y;
+};
+
+struct Point2fRawData {
+	float x;
+	float y;
+};
+
+struct RectRawData {
+	int x;
+	int y;
+	int width;
+	int height;
+};
+
+struct PointArrayRawData {
+	int n;
+	PointRawData points[1];
+};
+
+struct PointsArrayRawData {
+	int rowCount;
+	PointArrayRawData rowsData[1];
+};
+
 #pragma pack(pop)

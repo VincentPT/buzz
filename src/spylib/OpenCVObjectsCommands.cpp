@@ -10,17 +10,8 @@
 using namespace std;
 using namespace cv;
 
-ReturnData readMatObject(void* objectAddres) {
-	Mat& originImg = *(Mat*)objectAddres;
-	Mat img = originImg;
-
-	// currently, we change gray scale to color image
-	// because some image lib, is not support load gray scale
-	//if (img.channels() == 1) {
-	//	Mat imgTmp;
-	//	cvtColor(originImg, imgTmp, CV_GRAY2BGR);
-	//	img = imgTmp;
-	//}
+ReturnData readCVMatObject(void* objectAddres) {
+	auto& img = *(const Mat*)objectAddres;
 
 	int stride = img.step[0];
 	size_t sizeInBytes = stride * img.rows;
@@ -55,5 +46,113 @@ ReturnData readMatObject(void* objectAddres) {
 	returnData.customData = (char*)imgData;
 	returnData.sizeOfCustomData = totalSize;
 
+	return returnData;
+}
+
+/// read pointer of cv::Point object
+SPYLIB_API ReturnData readCVPointObject(void* objectAddres) {
+	auto& point = *(const Point*)objectAddres;
+
+	int totalSize = sizeof(PointRawData);
+	PointRawData* rawData = (PointRawData*)malloc(totalSize);
+
+	rawData->x = point.x;
+	rawData->y = point.y;
+
+	ReturnData returnData;
+	returnData.sizeOfCustomData = totalSize;
+	returnData.customData = (char*)rawData;
+	return returnData;
+}
+
+/// read pointer of cv::Point2f object
+SPYLIB_API ReturnData readCVPointFObject(void* objectAddres) {
+	auto& point = *(const Point2f*)objectAddres;
+
+	int totalSize = sizeof(Point2fRawData);
+	Point2fRawData* rawData = (Point2fRawData*)malloc(totalSize);
+
+	rawData->x = point.x;
+	rawData->y = point.y;
+
+	ReturnData returnData;
+	returnData.sizeOfCustomData = totalSize;
+	returnData.customData = (char*)rawData;
+	return returnData;
+}
+
+/// read pointer of cv::Rect object
+SPYLIB_API ReturnData readCVRectObject(void* objectAddres) {
+	auto& rect = *(const Rect*)objectAddres;
+
+	int totalSize = sizeof(RectRawData);
+	RectRawData* rawData = (RectRawData*)malloc(totalSize);
+
+	rawData->x = rect.x;
+	rawData->y = rect.y;
+	rawData->width = rect.width;
+	rawData->height = rect.height;
+
+	ReturnData returnData;
+	returnData.sizeOfCustomData = totalSize;
+	returnData.customData = (char*)rawData;
+	return returnData;
+}
+
+/// read pointer of std::vector<cv::Point> object
+SPYLIB_API ReturnData readCVContour(void* objectAddres) {
+	auto& stdpoints = *(const std::vector<Point>*)objectAddres;
+
+	int totalSize = (int)(sizeof(PointArrayRawData) - sizeof(PointArrayRawData::points) + sizeof(PointArrayRawData::points[0]) * stdpoints.size());
+	PointArrayRawData* rawData = (PointArrayRawData*)malloc(totalSize);
+
+	rawData->n = (int)stdpoints.size();
+	auto& points = rawData->points;
+
+	for (int i = 0; i < rawData->n; i++) {
+		points[i].x = stdpoints[i].x;
+		points[i].y = stdpoints[i].y;
+	}	
+
+	ReturnData returnData;
+	returnData.sizeOfCustomData = totalSize;
+	returnData.customData = (char*)rawData;
+	return returnData;
+}
+
+/// read pointer of std::vector<std::vector<cv::Point>> object
+SPYLIB_API ReturnData readCVContours(void* objectAddres) {
+	auto& contours = *(const std::vector<std::vector<cv::Point>>*)objectAddres;
+
+	int totalSize = 0;
+	int rowSize;
+	for (size_t i = 0; i < contours.size(); i++) {
+		auto& stdpoints = contours[i];
+		rowSize = (int)(sizeof(PointArrayRawData) - sizeof(PointArrayRawData::points) + sizeof(PointArrayRawData::points[0]) * stdpoints.size());
+		totalSize += rowSize;
+	}
+
+	totalSize += sizeof(PointsArrayRawData) - sizeof(PointsArrayRawData::rowsData);
+
+	PointsArrayRawData* rawData = (PointsArrayRawData*)malloc(totalSize);
+	rawData->rowCount = (int)contours.size();
+	PointArrayRawData* rowData = rawData->rowsData;
+	for (size_t i = 0; i < contours.size(); i++) {
+		auto& stdpoints = contours[i];
+		rowSize = (int)(sizeof(PointArrayRawData) - sizeof(PointArrayRawData::points) + sizeof(PointArrayRawData::points[0]) * stdpoints.size());
+
+		rowData->n = (int)stdpoints.size();
+		auto& points = rowData->points;
+		for (size_t j = 0; j < stdpoints.size(); j++) {
+			points[j].x = stdpoints[j].x;
+			points[j].y = stdpoints[j].y;
+		}
+
+		rowData = (PointArrayRawData*)((char*)rowData + rowSize);
+	}
+
+	ReturnData returnData;
+	returnData.sizeOfCustomData = totalSize;
+	returnData.customData = (char*)rawData;
 	return returnData;
 }

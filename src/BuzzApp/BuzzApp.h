@@ -14,6 +14,7 @@ public:
 	void mouseDrag(ci::app::MouseEvent event);
 	void keyDown(ci::app::KeyEvent event);
 	void draw();
+	void update();
 	void createNewWindow();
 	void onClipboardTextChanged(const std::string& text);
 };
