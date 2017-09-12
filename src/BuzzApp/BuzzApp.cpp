@@ -93,7 +93,7 @@ void BuzzApp::onClipboardTextChanged(const std::string& text) {
 		buzzWindow->showInputerWithAddress(address);
 	}
 	else {
-		cout << "check clipboard for visual studio copied text" << std::endl;
+		cout << "check clipboard for visual studio's copied text" << std::endl;
 		// parse string copy from a row in Watch window of visual studio
 		vector<string> elems;
 		split(text, '\t', elems);
