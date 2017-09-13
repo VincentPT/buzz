@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <io.h>
 #include <fcntl.h>
+#include "resources\resource.h"
 
 #include "cinder/app/RendererGl.h"
 #include "cinder/gl/gl.h"
@@ -43,6 +44,25 @@ void setupConsole() {
 	freopen("CONOUT$", "w", stderr);
 }
 
+INT_PTR CALLBACK DialogProc(_In_ HWND hwndDlg, _In_ UINT uMsg, _In_ WPARAM wParam, _In_ LPARAM lParam) {
+	switch (uMsg)
+	{
+	case WM_INITDIALOG:
+		return TRUE;
+
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDOK:
+			return TRUE;
+		case IDCANCEL:
+			DestroyWindow(hwndDlg);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
 void BuzzApp::setup()
 {
 	using namespace std::placeholders;
@@ -53,6 +73,9 @@ void BuzzApp::setup()
 
 	auto firstWindow = new BuzzWindow(defaultNativeWindow);
 	firstWindow->setTitle("buzz");
+
+	//HMODULE hModule = GetModuleHandleA(NULL);
+	//DialogBoxA(hModule, MAKEINTRESOURCEA(IDD_OBJECT_HIERARCHY), NULL, DialogProc);
 
 	ClipboardViewer* clipboardViewer = ClipboardViewer::getInstance();
 	// register ANSI text handler
