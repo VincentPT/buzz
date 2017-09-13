@@ -18,7 +18,10 @@ SET (MAIN_SOURCES
     BuzzWindow.cpp
     BuzzWindow_PartReadObjects.cpp
     Resources.h
-    resources/Resources.rc)
+    resources/Resources.rc
+    resources/buzz.rc
+    resources/resource.h
+    )
 
 SET (PRETZEL_SOURCES    
     ${CMAKE_SOURCE_DIR}/cinder/blocks/PretzelGui/src/components/BasePretzel.cpp
