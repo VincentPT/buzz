@@ -1,6 +1,7 @@
 #include "BuzzWindow.h"
 #include "utils/ClipboardViewer.h"
 #include "pretzel/PretzelGui.h"
+#include "dialogs\ObjectHierarchyDlg.h"
 
 using namespace ci;
 using namespace ci::app;
@@ -59,6 +60,9 @@ void BuzzWindow::setupWindow() {
 	_nativeWindow->getSignalResize().connect(std::bind(&BuzzWindow::onResize, this));
 	_nativeWindow->getSignalMouseWheel().connect(std::bind(&BuzzWindow::onMouseWheel, this, _1));
 
+	_rootObject = make_shared<BuzzContainer>();
+	_rootObject->setName("Sence");
+
 	//onStartMonitorProcess(nullptr);
 }
 
@@ -105,9 +109,7 @@ void BuzzWindow::draw() {
 			gl::draw(_tex);
 		}
 
-		for (auto& obj : _drawingObjects) {
-			obj->draw();
-		}
+		_rootObject->draw();
 
 		// reset update flag
 		_needUpdate = false;
@@ -125,6 +127,10 @@ void BuzzWindow::draw() {
 		gl::draw(_frameBuffer->getColorTexture());
 	}
 	pretzel::PretzelGui::drawAll();
+}
+
+void BuzzWindow::addNewObject(BuzzDrawObj* obj) {
+	_rootObject->addObject(BuzzDrawObjRef(obj));
 }
 
 void BuzzWindow::showInputerWithAddress(void* address) {	
@@ -149,7 +155,11 @@ void BuzzWindow::onKeyPress(KeyEvent& e) {
 			_activeDialog = _objectInputerDlgRef;
 			e.setHandled();
 		}
-		
+		else if (e.getCode() == KeyEvent::KEY_t) {
+			_hierarchyDialog = std::make_shared<ObjectHierarchyDlg>((HWND)_nativeWindow->getNative(), this);
+			_hierarchyDialog->setObjectRoot(_rootObject);
+			_hierarchyDialog->show();
+		}
 	}
 }
 
@@ -235,5 +245,12 @@ void BuzzWindow::onAddObjectClick(BuzzDialog* sender) {
 	void* desireReadObjectAddress = _objectInputerDlgRef->getObjectAddress();
 	int type = _objectInputerDlgRef->getSelectedTypeIndex();
 
-	readObject(desireReadObjectAddress, type);
+	BuzzDrawObj* obj = readObject(desireReadObjectAddress, type);
+	if (obj) {
+		std::stringstream ss;
+		ss << std::setfill('0') << std::setw(sizeof(void*) * 2)
+			<< std::hex << desireReadObjectAddress;
+		obj->setName(ss.str());
+		addNewObject(obj);
+	}
 }

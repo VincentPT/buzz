@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <string>
 
 // rgba color
 typedef unsigned int BuzzColor;
@@ -20,6 +21,8 @@ struct BuzzLocation {
 class BuzzDrawObj {
 protected:
 	BuzzColor _rgba;
+	std::string _name;
+	bool _isVisible;
 public:
 	BuzzDrawObj();
 	virtual ~BuzzDrawObj();
@@ -34,6 +37,12 @@ public:
 
 	void setColor(const BuzzColor& rgba);
 	const BuzzColor& getColor() const;
+
+	const std::string& getName() const;
+	void setName(const std::string&);
+
+	void setVisible(bool visible);
+	bool isVisible() const;
 };
 
 typedef std::shared_ptr<BuzzDrawObj> BuzzDrawObjRef;

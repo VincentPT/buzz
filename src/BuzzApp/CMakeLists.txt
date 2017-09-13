@@ -68,6 +68,10 @@ SET (DIALOG_SOURCES
     dialogs/BuzzDialog.cpp
     dialogs/BuzzCustomGui.h
     dialogs/BuzzCustomGui.cpp
+    dialogs/ObjectHierarchyDlg.h
+    dialogs/ObjectHierarchyDlg.cpp
+    dialogs/Win32Dlg.h
+    dialogs/Win32Dlg.cpp
 )
 
 SET (UTILITIES

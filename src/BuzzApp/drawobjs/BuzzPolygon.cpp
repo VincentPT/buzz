@@ -18,6 +18,10 @@ int BuzzPolygon::addPoint(const float&x, const float&y) {
 
 // this function will be call each frame
 void BuzzPolygon::draw() {
+	if (isVisible() == false) {
+		return;
+	}
+
 	constexpr float lineW = 2;
 	gl::ScopedColor scopeColor(BCRED(_rgba) / 255.0f, BCGREEN(_rgba) / 255.0f, BCBLUE(_rgba) / 255.0f, BCALPHA(_rgba) / 255.0f);
 	

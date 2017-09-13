@@ -9,13 +9,13 @@
 using namespace ci;
 using namespace ci::app;
 
-void BuzzWindow::readObject(void* desireReadObjectAddress, int type) {
+BuzzDrawObj* BuzzWindow::readObject(void* desireReadObjectAddress, int type) {
 	if (desireReadObjectAddress == nullptr) {
-		return;
+		return nullptr;
 	}
 
 	if (type < 0 || type >= (int)CustomCommandId::CUSTOM_COMMAND_END) {
-		return;
+		return nullptr;
 	}
 
 	if (!_spyClient) {
@@ -33,10 +33,10 @@ void BuzzWindow::readObject(void* desireReadObjectAddress, int type) {
 	}
 
 	if (res == false) {
-		return;
+		return nullptr;
 	}
 
-	typedef void (BuzzWindow::*ReadObjectFunc) (void*);
+	typedef BuzzDrawObj* (BuzzWindow::*ReadObjectFunc) (void*);
 
 	static ReadObjectFunc readObjectFuncs[] = {
 		&BuzzWindow::readCVMatObject,
@@ -47,14 +47,18 @@ void BuzzWindow::readObject(void* desireReadObjectAddress, int type) {
 		&BuzzWindow::readCVContoursObject,
 	};
 
-	(this->*readObjectFuncs[type])(desireReadObjectAddress);
+	BuzzDrawObj* pNewObjectCreated = (this->*readObjectFuncs[type])(desireReadObjectAddress);
 
 	// need update FBO on draw method because of new object created by above handlers
 	needUpdate();
+
+	return pNewObjectCreated;
 }
 
-void BuzzWindow::readCVMatObject(void* desireReadObjectAddress) {
-	_spyClient->readCVMat(desireReadObjectAddress, [this](ImageRawData* &ptr) {
+BuzzDrawObj* BuzzWindow::readCVMatObject(void* desireReadObjectAddress) {
+	BuzzDrawObj* pObj = nullptr;
+
+	_spyClient->readCVMat(desireReadObjectAddress, [this, &pObj](ImageRawData* &ptr) {
 		SurfaceRef surFace;
 		if (ptr->pixelFormat == RawDataPixelFormat::BGR) {
 			surFace = Surface::create((uint8_t*)ptr->data, ptr->width, ptr->height, ptr->stride, cinder::SurfaceChannelOrder::BGR);
@@ -96,30 +100,41 @@ void BuzzWindow::readCVMatObject(void* desireReadObjectAddress) {
 			_tex = gl::Texture2d::create(*surFace.get());
 		}
 	});
+
+	return pObj;
 }
 
-void BuzzWindow::readCVPointObject(void* desireReadObjectAddress) {
-	_spyClient->readCVPoint(desireReadObjectAddress, [this](PointRawData* &ptr) {		
+BuzzDrawObj* BuzzWindow::readCVPointObject(void* desireReadObjectAddress) {
+	BuzzDrawObj* pObj = nullptr;
+
+	_spyClient->readCVPoint(desireReadObjectAddress, [this, &pObj](PointRawData* &ptr) {
 		BuzzPoint* bzPoint = new BuzzPoint((float)ptr->x, (float)ptr->y);
-		BuzzDrawObjRef objRef(bzPoint);
-		_drawingObjects.push_back(objRef);
+		pObj = bzPoint;
 	});
+
+	return pObj;
 }
 
-void BuzzWindow::readCVPoint2fObject(void* desireReadObjectAddress) {
-	_spyClient->readCVPoint2f(desireReadObjectAddress, [this](Point2fRawData* &ptr) {
+BuzzDrawObj* BuzzWindow::readCVPoint2fObject(void* desireReadObjectAddress) {
+	BuzzDrawObj* pObj = nullptr;
+
+	_spyClient->readCVPoint2f(desireReadObjectAddress, [this, &pObj](Point2fRawData* &ptr) {
 		BuzzPoint* bzPoint = new BuzzPoint(ptr->x, ptr->y);
-		BuzzDrawObjRef objRef(bzPoint);
-		_drawingObjects.push_back(objRef);
+		pObj = bzPoint;
 	});
+
+	return pObj;
 }
 
-void BuzzWindow::readCVRectObject(void* desireReadObjectAddress) {
-	_spyClient->readCVRect(desireReadObjectAddress, [this](RectRawData* &ptr) {
+BuzzDrawObj* BuzzWindow::readCVRectObject(void* desireReadObjectAddress) {
+	BuzzDrawObj* pObj = nullptr;
+
+	_spyClient->readCVRect(desireReadObjectAddress, [this, &pObj](RectRawData* &ptr) {
 		BuzzRect* bzRect = new BuzzRect(ptr->x, ptr->y, ptr->width, ptr->height);
-		BuzzDrawObjRef objRef(bzRect);
-		_drawingObjects.push_back(objRef);
+		pObj = bzRect;
 	});
+
+	return pObj;
 }
 
 BuzzPolygon* convertToBuzzOject(PointArrayRawData* ptr) {
@@ -137,29 +152,39 @@ BuzzPolygon* convertToBuzzOject(PointArrayRawData* ptr) {
 	return bzPolygon;
 }
 
-void BuzzWindow::readCVContourObject(void* desireReadObjectAddress) {
-	_spyClient->readCVContour(desireReadObjectAddress, [this](PointArrayRawData* &ptr) {
+BuzzDrawObj* BuzzWindow::readCVContourObject(void* desireReadObjectAddress) {
+	BuzzDrawObj* pObj = nullptr;
+
+	_spyClient->readCVContour(desireReadObjectAddress, [this, &pObj](PointArrayRawData* &ptr) {
 		BuzzPolygon* bzPolygon = convertToBuzzOject(ptr);
-		BuzzDrawObjRef objRef(bzPolygon);
-		_drawingObjects.push_back(objRef);
+		pObj = bzPolygon;
 	});
+
+	return pObj;
 }
 
-void BuzzWindow::readCVContoursObject(void* desireReadObjectAddress) {
-	_spyClient->readCVContours(desireReadObjectAddress, [this](PointsArrayRawData* &ptr) {
+BuzzDrawObj* BuzzWindow::readCVContoursObject(void* desireReadObjectAddress) {
+	BuzzDrawObj* pObj = nullptr;
+
+	_spyClient->readCVContours(desireReadObjectAddress, [this, &pObj](PointsArrayRawData* &ptr) {
 		BuzzContainer* bzContainer = new BuzzContainer();
 
 		PointArrayRawData* rowData = ptr->rowsData;
 		for (int i = 0; i < ptr->rowCount; i++) {
+			std::stringstream ss;
+			ss << std::setfill('0') << std::setw(8) << i;
+
 			int rowSize = sizeof(rowData->n) + rowData->n * sizeof(PointRawData);
 
 			auto polygon = convertToBuzzOject(rowData);
 			bzContainer->addObject(BuzzDrawObjRef(polygon));
+			polygon->setName("contour " + ss.str());
 			
 			rowData = (PointArrayRawData*)((char*)rowData + rowSize);
 		}
 
-		BuzzDrawObjRef objRef(bzContainer);
-		_drawingObjects.push_back(objRef);
+		pObj = bzContainer;
 	});
+
+	return pObj;
 }

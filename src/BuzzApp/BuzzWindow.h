@@ -7,7 +7,8 @@
 #include "dialogs/ObjectSettingsDlg.h"
 #include "dialogs/WindowSettingsDlg.h"
 #include "utils/BuzzSpyClient.h"
-#include "drawobjs/BuzzDrawObj.h"
+#include "drawobjs/BuzzContainer.h"
+#include "dialogs/ObjectHierarchyDlg.h"
 
 
 class BuzzWindow
@@ -30,7 +31,8 @@ class BuzzWindow
 	std::shared_ptr<ObjectSettingsDlg>		_objectSettingsDlgRef;
 	std::shared_ptr<ObjectInputerDlg>		_objectInputerDlgRef;
 	std::shared_ptr<BuzzDialog>				_activeDialog;
-	std::list<BuzzDrawObjRef>				_drawingObjects;
+	std::shared_ptr<BuzzContainer>			_rootObject;
+	std::shared_ptr<ObjectHierarchyDlg>		_hierarchyDialog;
 private:
 	void onKeyPress(ci::app::KeyEvent& e);
 	void onClose();
@@ -39,13 +41,14 @@ private:
 	void onStartMonitorProcess(BuzzDialog* sender);
 	void onAddObjectClick(BuzzDialog* sender);	
 protected:
-	void setupWindow();
-	void needUpdate(bool flag = true);
+	void setupWindow();	
 	void pendingUpdate();
 public:
 	BuzzWindow(const std::string& title, int width, int height);
 	BuzzWindow(ci::app::WindowRef nativeWindow);
 	~BuzzWindow();
+
+	void needUpdate(bool flag = true);
 
 	BuzzWindow& setTitle(const std::string& title);
 	BuzzWindow& setSize(int width, int height);
@@ -55,13 +58,15 @@ public:
 	/// this function is should only should only be called by draw function of a cinder app
 	void draw();
 
-	void readObject(void* desireReadObjectAddress, int type);
-	void readCVMatObject(void* desireReadObjectAddress);
-	void readCVPointObject(void* desireReadObjectAddress);
-	void readCVPoint2fObject(void* desireReadObjectAddress);
-	void readCVRectObject(void* desireReadObjectAddress);
-	void readCVContourObject(void* desireReadObjectAddress);
-	void readCVContoursObject(void* desireReadObjectAddress);
+	void addNewObject(BuzzDrawObj* obj);
+
+	BuzzDrawObj* readObject(void* desireReadObjectAddress, int type);
+	BuzzDrawObj* readCVMatObject(void* desireReadObjectAddress);
+	BuzzDrawObj* readCVPointObject(void* desireReadObjectAddress);
+	BuzzDrawObj* readCVPoint2fObject(void* desireReadObjectAddress);
+	BuzzDrawObj* readCVRectObject(void* desireReadObjectAddress);
+	BuzzDrawObj* readCVContourObject(void* desireReadObjectAddress);
+	BuzzDrawObj* readCVContoursObject(void* desireReadObjectAddress);
 };
 
 typedef std::shared_ptr<BuzzWindow> BuzzWindowRef;

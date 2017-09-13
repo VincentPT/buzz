@@ -23,7 +23,14 @@ int BuzzContainer::addObject(BuzzDrawObjRef buzzDrawObjRef) {
 
 // this function will be call each frame
 void BuzzContainer::draw() {
+	if (isVisible() == false) {
+		return;
+	}
 	for (BuzzDrawObjRef& obj : _children) {
 		obj->draw();
 	}
+}
+
+const std::list<BuzzDrawObjRef>& BuzzContainer::getChildren() const {
+	return _children;
 }

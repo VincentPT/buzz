@@ -27,6 +27,10 @@ const BuzzLocation& BuzzRect::getSize() const {
 
 // this function will be call each frame
 void BuzzRect::draw() {
+	if (isVisible() == false) {
+		return;
+	}
+
 	constexpr float lineW = 2;
 	gl::ScopedColor scopeColor(BCRED(_rgba)/255.0f, BCGREEN(_rgba) / 255.0f, BCBLUE(_rgba) / 255.0f, BCALPHA(_rgba) / 255.0f);
 	auto rect = ci::Rectf(_location.x, _location.y, _location.x + _size.x, _location.y + _size.y);
