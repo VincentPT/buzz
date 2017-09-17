@@ -10,6 +10,14 @@ enum class RawDataPixelFormat : unsigned short {
 	YUV
 };
 
+enum class SortContourMode : unsigned char {
+	AsIs = 0,
+	PointCountIncrease,
+	PointCountDecrease,
+	AreaIncrease,
+	AreaDecrease
+};
+
 #pragma pack(push, 1)
 struct ImageRawData {
 	unsigned short width;

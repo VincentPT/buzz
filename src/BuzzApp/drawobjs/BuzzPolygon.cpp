@@ -16,6 +16,10 @@ int BuzzPolygon::addPoint(const float&x, const float&y) {
 	return (int)_points.size();
 }
 
+int BuzzPolygon::getPointCount() const {
+	return (int)_points.size();
+}
+
 // this function will be call each frame
 void BuzzPolygon::draw() {
 	if (isVisible() == false) {

@@ -70,6 +70,8 @@ SET (DIALOG_SOURCES
     dialogs/BuzzCustomGui.cpp
     dialogs/ObjectHierarchyDlg.h
     dialogs/ObjectHierarchyDlg.cpp
+    dialogs/ObjectHierarchyDlg2.h
+    dialogs/ObjectHierarchyDlg2.cpp
     dialogs/Win32Dlg.h
     dialogs/Win32Dlg.cpp
 )
@@ -115,7 +117,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/cinder/bl
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/spy)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/spylib)
 
-target_link_libraries(${PROJECT_NAME} cinder)
+target_link_libraries(${PROJECT_NAME} cinder Comctl32)
 # set_target_properties( ${PROJECT_NAME} PROPERTIES LINK_FLAGS_DEBUG "/NODEFAULTLIB:LIBCMT /NODEFAULTLIB:LIBCPMT" )
 # target_compile_options(${PROJECT_NAME} PRIVATE /utf-8)
 

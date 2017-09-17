@@ -1,7 +1,6 @@
 #include "BuzzWindow.h"
 #include "utils/ClipboardViewer.h"
 #include "pretzel/PretzelGui.h"
-#include "dialogs\ObjectHierarchyDlg.h"
 
 using namespace ci;
 using namespace ci::app;
@@ -36,6 +35,8 @@ BuzzWindow::~BuzzWindow()
 
 void BuzzWindow::setupWindow() {
 	using namespace std::placeholders;
+	auto size = _nativeWindow->getSize();
+	_frameBuffer = gl::Fbo::create(size.x, size.y, true, true, true);
 
 	// window settings gui
 	_windowSettingsDlgRef = std::make_shared<WindowSettingsDlg>(_nativeWindow);
@@ -139,6 +140,8 @@ void BuzzWindow::showInputerWithAddress(void* address) {
 }
 
 void BuzzWindow::onKeyPress(KeyEvent& e) {
+	using namespace std::placeholders;
+
 	if (!_activeDialog || _activeDialog->isVisible() == false) {
 		if (e.getCode() == KeyEvent::KEY_w) {
 			_windowSettingsDlgRef->show();
@@ -156,9 +159,16 @@ void BuzzWindow::onKeyPress(KeyEvent& e) {
 			e.setHandled();
 		}
 		else if (e.getCode() == KeyEvent::KEY_t) {
-			_hierarchyDialog = std::make_shared<ObjectHierarchyDlg>((HWND)_nativeWindow->getNative(), this);
+			_hierarchyDialog = std::make_shared<ObjectHierarchyDlg>((HWND)_nativeWindow->getNative());
 			_hierarchyDialog->setObjectRoot(_rootObject);
+			_hierarchyDialog->setItemCheckChangedHandler(std::bind(&BuzzWindow::onObjectCheckedChanged, this, _1, _2));
 			_hierarchyDialog->show();
+		}
+		else if (e.getCode() == KeyEvent::KEY_y) {
+			_hierarchyDialog2 = std::make_shared<ObjectHierarchyDlg2>((HWND)_nativeWindow->getNative());
+			_hierarchyDialog2->setObjectRoot(_rootObject);
+			_hierarchyDialog2->setItemCheckChangedHandler(std::bind(&BuzzWindow::onObjectCheckedChanged, this, _1, _2));
+			_hierarchyDialog2->show();
 		}
 	}
 }
@@ -253,4 +263,14 @@ void BuzzWindow::onAddObjectClick(BuzzDialog* sender) {
 		obj->setName(ss.str());
 		addNewObject(obj);
 	}
+}
+
+void BuzzWindow::onObjectCheckedChanged(BuzzDrawObj* obj, BOOL newState) {
+	if (newState == TRUE) {
+		obj->setVisible(true);
+	}
+	else if (newState == FALSE) {
+		obj->setVisible(false);
+	}
+	needUpdate();
 }

@@ -9,6 +9,7 @@
 #include "utils/BuzzSpyClient.h"
 #include "drawobjs/BuzzContainer.h"
 #include "dialogs/ObjectHierarchyDlg.h"
+#include "dialogs/ObjectHierarchyDlg2.h"
 
 
 class BuzzWindow
@@ -33,13 +34,15 @@ class BuzzWindow
 	std::shared_ptr<BuzzDialog>				_activeDialog;
 	std::shared_ptr<BuzzContainer>			_rootObject;
 	std::shared_ptr<ObjectHierarchyDlg>		_hierarchyDialog;
+	std::shared_ptr<ObjectHierarchyDlg2>	_hierarchyDialog2;
 private:
 	void onKeyPress(ci::app::KeyEvent& e);
 	void onClose();
 	void onResize();
 	void onMouseWheel(ci::app::MouseEvent& me);
 	void onStartMonitorProcess(BuzzDialog* sender);
-	void onAddObjectClick(BuzzDialog* sender);	
+	void onAddObjectClick(BuzzDialog* sender);
+	void onObjectCheckedChanged(BuzzDrawObj* obj, BOOL newState);
 protected:
 	void setupWindow();	
 	void pendingUpdate();

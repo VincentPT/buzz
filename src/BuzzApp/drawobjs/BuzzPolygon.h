@@ -11,6 +11,7 @@ public:
 
 	virtual BuzzLocation getLocation();
 	virtual int addPoint(const float&x, const float&y);
+	virtual int getPointCount() const;
 
 	// this function will be call each frame
 	virtual void draw();

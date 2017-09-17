@@ -7,15 +7,17 @@ using namespace ci;
 using namespace ci::app;
 
 ObjectInputerDlg::ObjectInputerDlg(ci::app::WindowRef window) :
-	BuzzDialog("Add object", 300, 250, window) {
+	BuzzDialog("Add object", 300, 300, window) {
 	pretzel::PretzelGuiRef nativeDlg = getNative();
 
 	_objectTypes = { "OpenCV Mat", "OpenCV Rect", "OpenCV Contour" };
+	_sortTypes = { "AsIs", "PointCountIncrease", "PointCountDecrease", "AreaIncrease", "AreaDecrease" };
 
 	nativeDlg->addTextField("Address", &_objectAddress, true);
 	nativeDlg->addEnum("Object type", &_objectTypes, &_objectTypeIdx);
 	nativeDlg->addButton("Add", &ObjectInputerDlg::onAddObjectButtonPress, this);
-	nativeDlg->addButton("Close", &BuzzDialog::onClose, (BuzzDialog*)this);	
+	nativeDlg->addButton("Close", &BuzzDialog::onClose, (BuzzDialog*)this);
+	nativeDlg->addEnum("Contour sort type", &_sortTypes, &_sortTypeIdx);
 }
 
 ObjectInputerDlg::~ObjectInputerDlg() {}
@@ -36,6 +38,10 @@ void ObjectInputerDlg::onAddObjectButtonPress() {
 
 void* ObjectInputerDlg::getObjectAddress() const {
 	return convertToAddress(_objectAddress);
+}
+
+SortContourMode ObjectInputerDlg::getSortType() const {
+	return (SortContourMode) _sortTypeIdx;
 }
 
 void* ObjectInputerDlg::convertToAddress(const std::string& address) {

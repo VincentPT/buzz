@@ -73,7 +73,6 @@ BuzzDrawObj* BuzzWindow::readCVMatObject(void* desireReadObjectAddress) {
 			surFace = Surface::create((uint8_t*)ptr->data, ptr->width, ptr->height, ptr->stride, cinder::SurfaceChannelOrder::RGBA);
 		}
 		else if (ptr->pixelFormat == RawDataPixelFormat::GrayScale) {
-			//surFace = Surface::create((uint8_t*)ptr->data, ptr->width, ptr->height, ptr->stride, cinder::SurfaceChannelOrder::CHAN_GREEN);
 			surFace = Surface::create(ptr->width, ptr->height, false, cinder::SurfaceChannelOrder::BGR);
 			auto pixelBytes = surFace->getPixelBytes();
 			auto diff = surFace->getRowBytes();
@@ -165,8 +164,9 @@ BuzzDrawObj* BuzzWindow::readCVContourObject(void* desireReadObjectAddress) {
 
 BuzzDrawObj* BuzzWindow::readCVContoursObject(void* desireReadObjectAddress) {
 	BuzzDrawObj* pObj = nullptr;
+	SortContourMode sortMode = _objectInputerDlgRef->getSortType();
 
-	_spyClient->readCVContours(desireReadObjectAddress, [this, &pObj](PointsArrayRawData* &ptr) {
+	_spyClient->readCVContours(desireReadObjectAddress, sortMode, [this, &pObj](PointsArrayRawData* &ptr) {
 		BuzzContainer* bzContainer = new BuzzContainer();
 
 		PointArrayRawData* rowData = ptr->rowsData;
@@ -178,7 +178,7 @@ BuzzDrawObj* BuzzWindow::readCVContoursObject(void* desireReadObjectAddress) {
 
 			auto polygon = convertToBuzzOject(rowData);
 			bzContainer->addObject(BuzzDrawObjRef(polygon));
-			polygon->setName("contour " + ss.str());
+			polygon->setName("contour (size =" + std::to_string(polygon->getPointCount()) + " )" + ss.str());
 			
 			rowData = (PointArrayRawData*)((char*)rowData + rowSize);
 		}

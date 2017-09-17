@@ -121,8 +121,44 @@ SPYLIB_API ReturnData readCVContour(void* objectAddres) {
 }
 
 /// read pointer of std::vector<std::vector<cv::Point>> object
-SPYLIB_API ReturnData readCVContours(void* objectAddres) {
+SPYLIB_API ReturnData readCVContours(void* objectAddres, SortContourMode sortMode) {
 	auto& contours = *(const std::vector<std::vector<cv::Point>>*)objectAddres;
+
+	vector<int> indexes(contours.size());
+	for (int i = 0; i < (int)indexes.size(); i++) {
+		indexes[i] = i;
+	}
+
+	if (sortMode == SortContourMode::PointCountIncrease) {
+		std::sort(indexes.begin(), indexes.end(), [&contours](int i1, int i2) {
+			return contours[i1].size() < contours[i2].size();
+		});
+	}
+	else if (sortMode == SortContourMode::PointCountDecrease) {
+		std::sort(indexes.begin(), indexes.end(), [&contours](int i1, int i2) {
+			return contours[i1].size() > contours[i2].size();
+		});
+	}
+	else if (sortMode == SortContourMode::AreaIncrease) {
+		vector<double> areas(contours.size());
+		for (int i = 0; i < (int)areas.size(); i++) {
+			areas[i] = contourArea(contours[i]);
+		}
+
+		std::sort(indexes.begin(), indexes.end(), [&areas](int i1, int i2) {
+			return areas[i1] < areas[i2];
+		});
+	}
+	else if (sortMode == SortContourMode::AreaDecrease) {
+		vector<double> areas(contours.size());
+		for (int i = 0; i < (int)areas.size(); i++) {
+			areas[i] = contourArea(contours[i]);
+		}
+
+		std::sort(indexes.begin(), indexes.end(), [&areas](int i1, int i2) {
+			return areas[i1] > areas[i2];
+		});
+	}
 
 	int totalSize = 0;
 	int rowSize;
@@ -138,7 +174,7 @@ SPYLIB_API ReturnData readCVContours(void* objectAddres) {
 	rawData->rowCount = (int)contours.size();
 	PointArrayRawData* rowData = rawData->rowsData;
 	for (size_t i = 0; i < contours.size(); i++) {
-		auto& stdpoints = contours[i];
+		auto& stdpoints = contours[indexes[i]];
 		rowSize = (int)(sizeof(PointArrayRawData) - sizeof(PointArrayRawData::points) + sizeof(PointArrayRawData::points[0]) * stdpoints.size());
 
 		rowData->n = (int)stdpoints.size();
