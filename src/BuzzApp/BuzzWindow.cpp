@@ -1,6 +1,7 @@
 #include "BuzzWindow.h"
 #include "utils/ClipboardViewer.h"
 #include "pretzel/PretzelGui.h"
+#include "drawobjs/BuzzContainer.h"
 
 using namespace ci;
 using namespace ci::app;
@@ -85,6 +86,28 @@ void BuzzWindow::pendingUpdate() {
 
 }
 
+void applyLineColorForAll(BuzzDrawObj* obj, BuzzColor color) {
+	obj->setColor(color);
+
+	auto pContainer = dynamic_cast<BuzzContainer*>(obj);
+	if (pContainer != nullptr) {
+		auto& children = pContainer->getChildren();
+		for (auto &aChildRef : children) {
+			applyLineColorForAll(aChildRef.get(), color);
+		}
+	}
+}
+
+void applyLineColorForAll(BuzzDrawObj* obj, const ColorA& color) {
+	int a, r, g, b;
+	a = (int)(color.a * 255);
+	r = (int)(color.r * 255);
+	g = (int)(color.g * 255);
+	b = (int)(color.b * 255);
+	BuzzColor buzzColor = BUZZCOLOR(r, g, b, a);
+	applyLineColorForAll(obj, buzzColor);
+}
+
 void BuzzWindow::draw() {
 	gl::clear(*_bckColor);
 	if (_pendingUpdate || _pendingResize) {
@@ -100,6 +123,13 @@ void BuzzWindow::draw() {
 			}
 		}
 	}
+
+	if (_objectSettingsDlgRef->isVisible()) {
+		_objectLine = _objectSettingsDlgRef->getObjectLineColor();
+		applyLineColorForAll(_rootObject.get(), _objectLine);
+		_needUpdate = true;
+	}
+
 	if(_needUpdate)
 	{		
 		gl::ScopedFramebuffer fbScp(_frameBuffer);
@@ -113,7 +143,7 @@ void BuzzWindow::draw() {
 		_rootObject->draw();
 
 		// reset update flag
-		_needUpdate = false;
+		_needUpdate = _afterUpdate;
 		// reset pending update flag
 		_pendingUpdate = false;
 	}
@@ -144,9 +174,12 @@ void BuzzWindow::onKeyPress(KeyEvent& e) {
 
 	if (!_activeDialog || _activeDialog->isVisible() == false) {
 		if (e.getCode() == KeyEvent::KEY_w) {
+			_needUpdate = true;
+			_afterUpdate = true;
 			_windowSettingsDlgRef->show();
 			_activeDialog = _windowSettingsDlgRef;
 			e.setHandled();
+			_windowSettingsDlgRef->setCloseEventHandler([this](BuzzDialog*) {_afterUpdate = false; });
 		}
 		else if (e.getCode() == KeyEvent::KEY_e) {
 			_objectSettingsDlgRef->show();

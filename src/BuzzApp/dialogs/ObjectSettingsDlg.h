@@ -16,10 +16,10 @@ public:
 	~ObjectSettingsDlg();
 
 	// return object's background color
-	ci::ColorA getObjectBckColor() const;
+	const ci::ColorA& getObjectBckColor() const;
 
 	// return object's line color
-	ci::ColorA getObjectLineColor() const;
+	const ci::ColorA& getObjectLineColor() const;
 
 	// set object's background color
 	void setObjectBckColor(const ci::ColorA&);

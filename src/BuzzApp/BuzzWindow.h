@@ -16,6 +16,7 @@ class BuzzWindow
 {
 	std::shared_ptr<BuzzSpyClient>			_spyClient;
 	bool									_needUpdate = true;
+	bool									_afterUpdate = false;
 	bool									_pendingUpdate = false;
 	bool									_pendingResize = false;
 	double									_updateFBOIV = 0.25f; //time in seconds to update FBO after an user's continous event
@@ -23,6 +24,7 @@ class BuzzWindow
 
 	ci::app::WindowRef						_nativeWindow;	
 	ci::ColorA*								_bckColor;
+	ci::ColorA								_objectLine;
 	ci::gl::Texture2dRef					_tex;
 	ci::gl::FboRef							_frameBuffer;
 	glm::mat4								_transform;

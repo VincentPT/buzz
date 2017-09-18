@@ -3,6 +3,12 @@
 
 BuzzDialog::BuzzDialog(const std::string& title, int width, int height, ci::app::WindowRef window) {
 	_nativeDlg = std::make_shared<BuzzCustomGui> (title, width, height, window);
+
+	_nativeDlg->setCloseEventHandler([this]() {
+		if (_closeEventHandler) {
+			_closeEventHandler(this);
+		}
+	});
 }
 
 BuzzDialog::~BuzzDialog() {}
@@ -14,6 +20,9 @@ BuzzCustomGuiRef BuzzDialog::getNative() const {
 void BuzzDialog::onClose() {
 	if (_nativeDlg) {
 		_nativeDlg->setVisible(false);
+		if (_closeEventHandler) {
+			_closeEventHandler(this);
+		}
 	}
 }
 
@@ -37,4 +46,8 @@ void BuzzDialog::display() {
 
 bool BuzzDialog::isVisible() {
 	return (_nativeDlg && _nativeDlg->isVisible());
+}
+
+void BuzzDialog::setCloseEventHandler(DialogCloseEventHandler&& eventHandler) {
+	_closeEventHandler = eventHandler;
 }

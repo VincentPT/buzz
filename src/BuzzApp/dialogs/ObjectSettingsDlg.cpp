@@ -14,11 +14,11 @@ ObjectSettingsDlg::ObjectSettingsDlg(ci::app::WindowRef window) :
 }
 ObjectSettingsDlg::~ObjectSettingsDlg() {}
 
-ci::ColorA ObjectSettingsDlg::getObjectBckColor() const {
+const ci::ColorA& ObjectSettingsDlg::getObjectBckColor() const {
 	return _objBckColor;
 }
 
-ci::ColorA ObjectSettingsDlg::getObjectLineColor() const {
+const ci::ColorA& ObjectSettingsDlg::getObjectLineColor() const {
 	return _objLineColor;
 }
 
