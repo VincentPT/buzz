@@ -9,6 +9,7 @@ add_library(${PROJECT_NAME} SHARED ${SOURCES})
 # add macros
 add_definitions(-DSPYLIB_EXPORTS)
 
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/json)
 target_link_libraries(${PROJECT_NAME} PRIVATE opencv)
 
 SET (INSTALL_DEST ${CMAKE_BINARY_DIR}/bin/)

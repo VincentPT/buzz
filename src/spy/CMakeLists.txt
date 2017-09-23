@@ -18,7 +18,7 @@ add_library(${PROJECT_NAME} SHARED ${SOURCES})
 # add macros
 add_definitions(-DSPY_EXPORTS)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE spylib)
+target_link_libraries(${PROJECT_NAME} PRIVATE spylib PRIVATE Shlwapi)
 
 SET (INSTALL_DEST ${CMAKE_BINARY_DIR}/bin/)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Debug/${PROJECT_NAME}.dll DESTINATION ${INSTALL_DEST} CONFIGURATIONS Debug)

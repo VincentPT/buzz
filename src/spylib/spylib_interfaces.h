@@ -44,6 +44,12 @@ struct RectRawData {
 	int height;
 };
 
+struct RectArrayRawData {
+	int rowCount;
+	RectRawData rowsData[1];
+};
+
+
 struct PointArrayRawData {
 	int n;
 	PointRawData points[1];
@@ -52,6 +58,11 @@ struct PointArrayRawData {
 struct PointsArrayRawData {
 	int rowCount;
 	PointArrayRawData rowsData[1];
+};
+
+struct RawBuffer {
+	unsigned int size;
+	char data[1];
 };
 
 #pragma pack(pop)

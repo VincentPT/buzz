@@ -15,11 +15,11 @@ protected:
 public:
 	SpyClient();
 	virtual ~SpyClient();
+	const std::string& getProcessName();
+
 	static DWORD getProcessByName(const char* processName);
 	static HMODULE getModuleByName(DWORD th32ProcessID, const char* moduleName, std::string& modulePath);
 	static std::string getModuleName(const std::string& dllPath);
-
-	const std::string& getProcessName();
 
 	bool startMonitorProcess(const char* processName, const std::string& rootDllPath, const std::list<std::string>& dependencyDllPaths);
 	bool stopMonitorProcess();
@@ -32,4 +32,6 @@ public:
 	int sendCommandToRemoteThread(BaseCmdData* commandData, ReturnData* pReturnData = nullptr, DWORD* executeResult = nullptr);
 	int readCustomCommandResult(ReturnData* pReturnData, void** ppCustomData);
 	int freeCustomCommandResult(ReturnData* pReturnData);
+
+	int loadCustomDynamicFunction(const char* dllFile, const char* functions[], int functionCount, std::list<CustomCommandId>& loadedCustomFunctions, HMODULE* phModule = nullptr);
 };

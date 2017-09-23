@@ -15,3 +15,5 @@ SPYLIB_API ReturnData readCVRectObject(void* objectAddres);
 SPYLIB_API ReturnData readCVContour(void* objectAddres);
 /// read pointer of std::vector<std::vector<cv::Point>> object
 SPYLIB_API ReturnData readCVContours(void* objectAddres, SortContourMode sortMode);
+/// sample API to read a null pointer and return a sample json string
+SPYLIB_API ReturnData readDummyTree(void* dummy);

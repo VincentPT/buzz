@@ -89,12 +89,16 @@ void BuzzApp::draw() {
 
 void BuzzApp::onClipboardTextChanged(const std::string& text) {
 	auto activeWindow = this->getForegroundWindow();
+	auto buzzWindow = activeWindow->getUserData<BuzzWindow>();
+
 	cout << "process for changing text in clipboard" << std::endl;
 
 	void* address = ObjectInputerDlg::convertToAddress(text);
 	if (address != nullptr) {
-		auto buzzWindow = activeWindow->getUserData<BuzzWindow>();
 		buzzWindow->showInputerWithAddress(address);
+	}
+	else if (text == "tree") {
+		buzzWindow->readObject(nullptr, (int)CustomCommandId::READ_DUMMYTREE);
 	}
 	else {
 		cout << "check clipboard for visual studio's copied text" << std::endl;
@@ -145,7 +149,6 @@ void BuzzApp::onClipboardTextChanged(const std::string& text) {
 				}
 				cout << "parse text successfully" << std::endl;
 
-				auto buzzWindow = activeWindow->getUserData<BuzzWindow>();
 				auto newDrawingObject = buzzWindow->readObject(address, type);
 				if (newDrawingObject) {
 					newDrawingObject->setName(name);

@@ -6,6 +6,9 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 
+#include "json.hpp"
+using json = nlohmann::json;
+
 // using namespaces
 using namespace std;
 using namespace cv;
@@ -43,6 +46,7 @@ ReturnData readCVMatObject(void* objectAddres) {
 
 	ReturnData returnData;
 
+	// set custom data to an allocated buffer, spy client should be responsible to free the memory after using
 	returnData.customData = (char*)imgData;
 	returnData.sizeOfCustomData = totalSize;
 
@@ -61,6 +65,7 @@ SPYLIB_API ReturnData readCVPointObject(void* objectAddres) {
 
 	ReturnData returnData;
 	returnData.sizeOfCustomData = totalSize;
+	// set custom data to an allocated buffer, spy client should be responsible to free the memory after using
 	returnData.customData = (char*)rawData;
 	return returnData;
 }
@@ -77,6 +82,7 @@ SPYLIB_API ReturnData readCVPointFObject(void* objectAddres) {
 
 	ReturnData returnData;
 	returnData.sizeOfCustomData = totalSize;
+	// set custom data to an allocated buffer, spy client should be responsible to free the memory after using
 	returnData.customData = (char*)rawData;
 	return returnData;
 }
@@ -95,6 +101,7 @@ SPYLIB_API ReturnData readCVRectObject(void* objectAddres) {
 
 	ReturnData returnData;
 	returnData.sizeOfCustomData = totalSize;
+	// set custom data to an allocated buffer, spy client should be responsible to free the memory after using
 	returnData.customData = (char*)rawData;
 	return returnData;
 }
@@ -116,6 +123,7 @@ SPYLIB_API ReturnData readCVContour(void* objectAddres) {
 
 	ReturnData returnData;
 	returnData.sizeOfCustomData = totalSize;
+	// set custom data to an allocated buffer, spy client should be responsible to free the memory after using
 	returnData.customData = (char*)rawData;
 	return returnData;
 }
@@ -189,6 +197,44 @@ SPYLIB_API ReturnData readCVContours(void* objectAddres, SortContourMode sortMod
 
 	ReturnData returnData;
 	returnData.sizeOfCustomData = totalSize;
+	// set custom data to an allocated buffer, spy client should be responsible to free the memory after using
 	returnData.customData = (char*)rawData;
+	return returnData;
+}
+
+/// sample API to read a null pointer and return a sample json string
+SPYLIB_API ReturnData readDummyTree(void* dummy) {
+
+	json aSampleTree = {
+		{ "name", "root" },
+		{ "nodes", {
+				{
+					{ "name", "child1" },
+				},
+				{
+					{ "name", "child2" },
+					{ "nodes", {
+							{
+								{ "name", "child2.1" },
+							}
+						}
+					},
+				},
+			}
+		},
+	};
+
+	stringstream ss;
+	ss << std::setw(4) << aSampleTree << std::endl;
+	string jsonStr = ss.str();
+
+	ReturnData returnData;
+	returnData.sizeOfCustomData = (int)(jsonStr.size() + 1);
+	// set custom data to an allocated buffer, spy client should be responsible to free the memory after using
+	returnData.customData = (char*)malloc(returnData.sizeOfCustomData);
+	returnData.customData[jsonStr.size()] = 0;
+
+	memcpy_s(returnData.customData, returnData.sizeOfCustomData, jsonStr.c_str(), jsonStr.size());
+
 	return returnData;
 }

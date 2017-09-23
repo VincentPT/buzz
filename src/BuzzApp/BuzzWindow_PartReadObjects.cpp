@@ -10,9 +10,9 @@ using namespace ci;
 using namespace ci::app;
 
 BuzzDrawObj* BuzzWindow::readObject(void* desireReadObjectAddress, int type) {
-	if (desireReadObjectAddress == nullptr) {
-		return nullptr;
-	}
+	//if (desireReadObjectAddress == nullptr) {
+	//	return nullptr;
+	//}
 
 	if (type < 0 || type >= (int)CustomCommandId::CUSTOM_COMMAND_END) {
 		return nullptr;
@@ -45,6 +45,7 @@ BuzzDrawObj* BuzzWindow::readObject(void* desireReadObjectAddress, int type) {
 		&BuzzWindow::readCVRectObject,
 		&BuzzWindow::readCVContourObject,
 		&BuzzWindow::readCVContoursObject,
+		&BuzzWindow::readDummyTree,
 	};
 
 	BuzzDrawObj* pNewObjectCreated = (this->*readObjectFuncs[type])(desireReadObjectAddress);
@@ -184,6 +185,18 @@ BuzzDrawObj* BuzzWindow::readCVContoursObject(void* desireReadObjectAddress) {
 		}
 
 		pObj = bzContainer;
+	});
+
+	return pObj;
+}
+
+BuzzDrawObj* BuzzWindow::readDummyTree(void* desireReadObjectAddress) {
+	BuzzDrawObj* pObj = nullptr;
+
+	_spyClient->readDummyTree(desireReadObjectAddress, [this, &pObj](char* &ptr) {
+		char* text = ptr;
+		std::cout << "dummy tree:" << text << std::endl;
+		text = nullptr;
 	});
 
 	return pObj;

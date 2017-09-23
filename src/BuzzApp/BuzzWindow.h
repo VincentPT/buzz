@@ -72,6 +72,7 @@ public:
 	BuzzDrawObj* readCVRectObject(void* desireReadObjectAddress);
 	BuzzDrawObj* readCVContourObject(void* desireReadObjectAddress);
 	BuzzDrawObj* readCVContoursObject(void* desireReadObjectAddress);
+	BuzzDrawObj* readDummyTree(void* desireReadObjectAddress);
 };
 
 typedef std::shared_ptr<BuzzWindow> BuzzWindowRef;

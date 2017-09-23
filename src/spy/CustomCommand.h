@@ -3,3 +3,4 @@
 
 void loadCustomFunctions();
 int invokeCustomCommand(CustomCommandCmdData* commandData);
+int LoadCustomFunctions(LoadCustomFunctionsCmdData* commandData);

@@ -17,4 +17,5 @@ public:
 	int readCVRect(void* address, const std::function<void(RectRawData*&)>& handler);
 	int readCVContour(void* address, const std::function<void(PointArrayRawData*&)>& handler);
 	int readCVContours(void* address, SortContourMode sortMode, const std::function<void(PointsArrayRawData*&)>& handler);
+	int readDummyTree(void* address, const std::function<void(char*&)>& handler);
 };

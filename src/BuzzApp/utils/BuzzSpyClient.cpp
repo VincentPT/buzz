@@ -25,8 +25,11 @@ bool BuzzSpyClient::startMonitorProcess(const char* processName) {
 	path thePath(currentProcesssFilePath);
 	string processParentPath = thePath.parent_path().u8string();
 
-	string rootSpyPath = processParentPath + "\\spy.dll";
-	list<string> dependencies = { processParentPath + "\\spylib.dll" };
+	string rootSpyPath = processParentPath + "\\" SPY_ROOT_DLL_NAME;
+	list<string> dependencies = {
+		processParentPath + "\\opencv_world310d.dll",
+		processParentPath + "\\spylib.dll"
+	};
 
 	bool blRes = SpyClient::startMonitorProcess(processName, rootSpyPath, dependencies);
 	return blRes;
@@ -91,4 +94,8 @@ int BuzzSpyClient::readCVContour(void* address, const std::function<void(PointAr
 
 int BuzzSpyClient::readCVContours(void* address, SortContourMode sortMode, const std::function<void(PointsArrayRawData*&)>& handler) {
 	return readCustomObject(this, CustomCommandId::OPENCV_READ_CVCONTOURS, handler, address, (void*)sortMode);
+}
+
+int BuzzSpyClient::readDummyTree(void* address, const std::function<void(char*&)>& handler) {
+	return readCustomObject(this, CustomCommandId::READ_DUMMYTREE, handler, address);
 }

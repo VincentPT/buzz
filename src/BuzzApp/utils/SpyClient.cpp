@@ -37,6 +37,10 @@ SpyClient::~SpyClient() {
 	}
 }
 
+const std::string& SpyClient::getProcessName() {
+	return _processName;
+}
+
 DWORD SpyClient::getProcessByName(const char* processName) {
 	PROCESSENTRY32 entry;
 	entry.dwSize = sizeof(PROCESSENTRY32);
@@ -364,6 +368,66 @@ int SpyClient::freeCustomCommandResult(ReturnData* pReturnData) {
 	return sendCommandToRemoteThread((BaseCmdData*)&cmdData);
 }
 
-const std::string& SpyClient::getProcessName() {
-	return _processName;
+int SpyClient::loadCustomDynamicFunction(const char* dllFile, const char* functions[], int functionCount, list<CustomCommandId>& loadedCustomFunctions, HMODULE* phModule) {
+	size_t totalSize = 0;
+	size_t size;
+
+	// compute size of buffer to store dll file and function names
+	totalSize = strlen(dllFile) + 1;
+	for (int i = 0; i < functionCount; i++) {
+		totalSize = strlen(functions[i]) + 1;
+	}
+
+	// prepare command buffer
+	vector<char> rawParam(totalSize + (sizeof(LoadCustomFunctionsCmdData) - sizeof(LoadCustomFunctionsCmdData::fNames)));
+	LoadCustomFunctionsCmdData& loadCustomFunctionCmdData = *(LoadCustomFunctionsCmdData*)rawParam.data();
+	loadCustomFunctionCmdData.commandId = CommandId::LOAD_CUSTOM_FUNCTIONS;
+	loadCustomFunctionCmdData.commandSize = (int)rawParam.size();
+	auto& returnData = loadCustomFunctionCmdData.returnData;
+
+	// fill dll file and function names to buffer
+	char* buffer = loadCustomFunctionCmdData.fNames;
+	size = strlen(dllFile) + 1;
+	memcpy_s(buffer, size, dllFile, size);
+	buffer += size;
+	
+	for (int i = 0; i < functionCount; i++) {
+		size = strlen(functions[i]) + 1;
+		memcpy_s(buffer, size, functions[i], size);
+		buffer += size;
+	}
+
+	// call load custom functions in remote thread
+	int iRes = sendCommandToRemoteThread((BaseCmdData*)&loadCustomFunctionCmdData, &returnData);
+	if (iRes != 0) {
+		return iRes;
+	}
+	// check the return data size
+	if (returnData.sizeOfCustomData != sizeof(HMODULE) + functionCount * sizeof(CustomCommandId)) {
+		cout << "return data by load custom function is not correct" << std::endl;
+		return -1;
+	}
+
+	char* rawData;
+	// read return buffer from remote process
+	iRes = readCustomCommandResult(&returnData, (void**)&rawData);
+	if (iRes != 0) {
+		return iRes;
+	}
+
+	// fill the return data to local output data
+	if (phModule) {
+		*phModule = *((HMODULE*)rawData);
+	}
+	rawData += sizeof(HMODULE);
+	CustomCommandId* pCmdId = (CustomCommandId*)rawData;
+
+	for (int i = 0; i < functionCount; i++) {
+		loadedCustomFunctions.push_back(*pCmdId++);
+	}
+
+	free(rawData);
+
+	int freeBufferRes = freeCustomCommandResult(&returnData);
+	return iRes;
 }

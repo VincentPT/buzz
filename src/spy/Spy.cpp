@@ -1,6 +1,5 @@
 #include "Spy.h"
 #include "CustomCommand.h"
-
 #include <Windows.h>
 
 #include <iostream>
@@ -27,6 +26,8 @@ extern "C" {
 			return invokeCustomCommand((CustomCommandCmdData*)param);
 		case CommandId::FREE_BUFFER:
 			return freeBufferCommand((FreeBufferCmdData*)param);
+		case CommandId::LOAD_CUSTOM_FUNCTIONS:
+			break;
 		default:
 			break;
 		}
