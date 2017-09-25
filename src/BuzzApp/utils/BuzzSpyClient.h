@@ -2,14 +2,23 @@
 #include "SpyClient.h"
 #include "spylib_interfaces.h"
 
+#include <Windows.h>
 #include <functional>
 
 class BuzzSpyClient : public SpyClient {
+	CustomCommandId _predefinedBase;
+	HMODULE _hSpyLib;
+protected:
+	void setPredefinedCommandIdBase(int predefinedBase);
+	void loadSpyLib();
+	void unloadSpyLib();
 public:
 	BuzzSpyClient();
 	~BuzzSpyClient();
 
 	bool startMonitorProcess(const char* processName);
+	bool stopMonitorProcess();
+	bool restartMonitorProcess();
 	
 	int readCVMat(void* address, const std::function<void(ImageRawData*&)>& handler);
 	int readCVPoint(void* address, const std::function<void(PointRawData*&)>& handler);

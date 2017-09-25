@@ -1,5 +1,24 @@
 #pragma once
 
+// user enum's declaration
+enum class UserCommandId : unsigned short {
+	OPENCV_READ_MAT_OBJECT = 0,
+	OPENCV_READ_CVPOINT_OBJECT,
+	OPENCV_READ_CVPOINT2F_OBJECT,
+	OPENCV_READ_CVRECT_OBJECT,
+	OPENCV_READ_CVCONTOUR,
+	OPENCV_READ_CVCONTOURS,
+	READ_DUMMYTREE,
+
+	// this must be placed at the end
+	PRE_DEFINED_COMMAND_COUNT,
+};
+
+enum class ReturnCode : int {
+	Success = 0,
+	Fail
+};
+
 enum class RawDataPixelFormat : unsigned short {
     RGB = 0,
     BGR,
@@ -18,6 +37,7 @@ enum class SortContourMode : unsigned char {
 	AreaDecrease
 };
 
+// user structure's declaration
 #pragma pack(push, 1)
 struct ImageRawData {
 	unsigned short width;

@@ -1,16 +1,49 @@
 #include "BuzzSpyClient.h"
-#include "ScopeAutoFunction.hpp"
+#include "SpyClientUtils.hpp"
 
 #include <filesystem>
 #include <string>
+#include <iostream>
 
 using namespace std;
 
-BuzzSpyClient::BuzzSpyClient() {
+#define SPY_LIB_NAME "spylib.dll"
+
+BuzzSpyClient::BuzzSpyClient() : _predefinedBase(CUSTOM_COMMAND_END), _hSpyLib(nullptr) {
 }
 
 BuzzSpyClient::~BuzzSpyClient() {
 
+}
+
+void BuzzSpyClient::setPredefinedCommandIdBase(int predefinedBase) {
+	_predefinedBase = (CustomCommandId)predefinedBase;
+}
+
+void BuzzSpyClient::loadSpyLib() {
+	cout << "loading spy lib " SPY_LIB_NAME << endl;
+
+	int ret = loadPredefinedFunctions(SPY_LIB_NAME, &_hSpyLib);
+	int loadedFunctionCount = GET_NUMBER_OF_LOAD_PREDEFINED_FUNC(ret);
+	CustomCommandId commandBase = GET_BASE_OF_LOAD_PREDEFINED_FUNC(ret);
+
+	// print the spy results
+	cout << "number of loaded function " << loadedFunctionCount << endl;
+	cout << "custom commands begin at " << commandBase << endl;
+
+	// store command id base and use it to invoke inside the UserSpyClient methods
+	setPredefinedCommandIdBase(commandBase);
+}
+
+void BuzzSpyClient::unloadSpyLib() {
+	if (_hSpyLib) {
+		if (unloadModule(_hSpyLib) != 0) {
+			cout << "unload spy lib " SPY_LIB_NAME " failed!" << endl;
+		}
+		else {
+			_hSpyLib = nullptr;
+		}
+	}
 }
 
 bool BuzzSpyClient::startMonitorProcess(const char* processName) {
@@ -27,75 +60,67 @@ bool BuzzSpyClient::startMonitorProcess(const char* processName) {
 
 	string rootSpyPath = processParentPath + "\\" SPY_ROOT_DLL_NAME;
 	list<string> dependencies = {
-		processParentPath + "\\opencv_world310d.dll",
-		processParentPath + "\\spylib.dll"
 	};
 
-	bool blRes = SpyClient::startMonitorProcess(processName, rootSpyPath, dependencies);
+	bool blRes = SpyClient::inject(processName, rootSpyPath, dependencies);
+	if (blRes) {
+		loadSpyLib();
+	}
+
 	return blRes;
 }
 
+bool BuzzSpyClient::stopMonitorProcess() {
+	unloadSpyLib();
+	bool res = uninject();
+	if (!res) {
+		cout << "stopMonitorProcess failed!" << endl;
+	}
+
+	return res;
+}
+
+bool BuzzSpyClient::restartMonitorProcess() {
+	stopMonitorProcess();
+	return reinject();
+}
+
 template <class T, class ...Args>
-int readCustomObject(BuzzSpyClient* buzzSpyClient, CustomCommandId customCmdId, const std::function<void(T*&)>& handler, Args...args) {
-	void* params[] = { args... };
-	constexpr int nParam = sizeof...(args);
-	char commandRaw[sizeof(CustomCommandCmdData) + (nParam - 1) * sizeof(void*)];
+int readCustomObject(BuzzSpyClient* buzzSpyClient, CustomCommandId customCmdId, const std::function<void(T&)>& handler, Args...args) {
 
-	CustomCommandCmdData& customData = *(CustomCommandCmdData*)&commandRaw[0];
-	customData.commandSize = sizeof(commandRaw);
-	customData.commandId = CommandId::CUSTOM_COMMAND;
-	customData.customCommandId = customCmdId;
-	customData.paramCount = nParam;
+	auto nativeHandler = [&handler](ReturnData& returnData) {
+		T customdata = (T)returnData.customData;
+		handler(customdata);
+		returnData.customData = (char*)customdata;
+	};
 
-	memcpy_s(&customData.params[0], sizeof(params), &params[0], sizeof(params));
-
-	ReturnData& returnData = customData.returnData;
-	int iRes;
-	iRes = buzzSpyClient->sendCommandToRemoteThread((BaseCmdData*)&customData, &returnData);
-	if (iRes != 0) {
-		return iRes;
-	}
-
-	T* rawData;
-	iRes = buzzSpyClient->readCustomCommandResult(&returnData, (void**)&rawData);
-	if (iRes != 0) {
-		return iRes;
-	}
-
-	handler(rawData);
-
-	if (rawData != nullptr) {
-		free(rawData);
-	}
-
-	int freeBufferRes = buzzSpyClient->freeCustomCommandResult(&returnData);
-	return iRes;
+	return executeCommandAndFreeCustomData(buzzSpyClient, customCmdId, nativeHandler, args...);
 }
 
 int BuzzSpyClient::readCVMat(void* address, const std::function<void(ImageRawData*&)>& handler) {
-	return readCustomObject(this, CustomCommandId::OPENCV_READ_MAT_OBJECT, handler, address);
+	return readCustomObject(this, (CustomCommandId)UserCommandId::OPENCV_READ_MAT_OBJECT + _predefinedBase, handler, address);
 }
 
 int BuzzSpyClient::readCVPoint(void* address, const std::function<void(PointRawData*&)>& handler) {
-	return readCustomObject(this, CustomCommandId::OPENCV_READ_CVPOINT_OBJECT, handler, address);
+	return readCustomObject(this, (CustomCommandId)UserCommandId::OPENCV_READ_CVPOINT_OBJECT + _predefinedBase, handler, address);
 }
 
 int BuzzSpyClient::readCVPoint2f(void* address, const std::function<void(Point2fRawData*&)>& handler) {
-	return readCustomObject(this, CustomCommandId::OPENCV_READ_CVPOINT2F_OBJECT, handler, address);
+	return readCustomObject(this, (CustomCommandId)UserCommandId::OPENCV_READ_CVPOINT2F_OBJECT + _predefinedBase, handler, address);
 }
 
 int BuzzSpyClient::readCVRect(void* address, const std::function<void(RectRawData*&)>& handler) {
-	return readCustomObject(this, CustomCommandId::OPENCV_READ_CVRECT_OBJECT, handler, address);
+	return readCustomObject(this, (CustomCommandId)UserCommandId::OPENCV_READ_CVRECT_OBJECT + _predefinedBase, handler, address);
 }
 
 int BuzzSpyClient::readCVContour(void* address, const std::function<void(PointArrayRawData*&)>& handler) {
-	return readCustomObject(this, CustomCommandId::OPENCV_READ_CVCONTOUR, handler, address);
+	return readCustomObject(this, (CustomCommandId)UserCommandId::OPENCV_READ_CVCONTOUR + _predefinedBase, handler, address);
 }
 
 int BuzzSpyClient::readCVContours(void* address, SortContourMode sortMode, const std::function<void(PointsArrayRawData*&)>& handler) {
-	return readCustomObject(this, CustomCommandId::OPENCV_READ_CVCONTOURS, handler, address, (void*)sortMode);
+	return readCustomObject(this, (CustomCommandId)UserCommandId::OPENCV_READ_CVCONTOURS + _predefinedBase, handler, address, (void*)sortMode);
 }
 
 int BuzzSpyClient::readDummyTree(void* address, const std::function<void(char*&)>& handler) {
-	return readCustomObject(this, CustomCommandId::READ_DUMMYTREE, handler, address);
+	return readCustomObject(this, (CustomCommandId)UserCommandId::READ_DUMMYTREE + _predefinedBase, handler, address);
 }

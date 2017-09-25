@@ -16,9 +16,9 @@ using namespace cv;
 ReturnData readCVMatObject(void* objectAddres) {
 	auto& img = *(const Mat*)objectAddres;
 
-	int stride = img.step[0];
+	int stride = (int)img.step[0];
 	size_t sizeInBytes = stride * img.rows;
-	int totalSize = sizeof(ImageRawData) - sizeof(ImageRawData::data) + sizeInBytes;
+	int totalSize = (int)(sizeof(ImageRawData) - sizeof(ImageRawData::data) + sizeInBytes);
 	ImageRawData* imgData = (ImageRawData*)malloc(totalSize);
 
 	typedef decltype(ImageRawData::width) IMG_SIZE_T;
@@ -54,7 +54,7 @@ ReturnData readCVMatObject(void* objectAddres) {
 }
 
 /// read pointer of cv::Point object
-SPYLIB_API ReturnData readCVPointObject(void* objectAddres) {
+ReturnData readCVPointObject(void* objectAddres) {
 	auto& point = *(const Point*)objectAddres;
 
 	int totalSize = sizeof(PointRawData);
@@ -71,7 +71,7 @@ SPYLIB_API ReturnData readCVPointObject(void* objectAddres) {
 }
 
 /// read pointer of cv::Point2f object
-SPYLIB_API ReturnData readCVPointFObject(void* objectAddres) {
+ReturnData readCVPointFObject(void* objectAddres) {
 	auto& point = *(const Point2f*)objectAddres;
 
 	int totalSize = sizeof(Point2fRawData);
@@ -88,7 +88,7 @@ SPYLIB_API ReturnData readCVPointFObject(void* objectAddres) {
 }
 
 /// read pointer of cv::Rect object
-SPYLIB_API ReturnData readCVRectObject(void* objectAddres) {
+ReturnData readCVRectObject(void* objectAddres) {
 	auto& rect = *(const Rect*)objectAddres;
 
 	int totalSize = sizeof(RectRawData);
@@ -107,7 +107,7 @@ SPYLIB_API ReturnData readCVRectObject(void* objectAddres) {
 }
 
 /// read pointer of std::vector<cv::Point> object
-SPYLIB_API ReturnData readCVContour(void* objectAddres) {
+ReturnData readCVContour(void* objectAddres) {
 	auto& stdpoints = *(const std::vector<Point>*)objectAddres;
 
 	int totalSize = (int)(sizeof(PointArrayRawData) - sizeof(PointArrayRawData::points) + sizeof(PointArrayRawData::points[0]) * stdpoints.size());
@@ -129,7 +129,7 @@ SPYLIB_API ReturnData readCVContour(void* objectAddres) {
 }
 
 /// read pointer of std::vector<std::vector<cv::Point>> object
-SPYLIB_API ReturnData readCVContours(void* objectAddres, SortContourMode sortMode) {
+ReturnData readCVContours(void* objectAddres, SortContourMode sortMode) {
 	auto& contours = *(const std::vector<std::vector<cv::Point>>*)objectAddres;
 
 	vector<int> indexes(contours.size());
@@ -203,7 +203,7 @@ SPYLIB_API ReturnData readCVContours(void* objectAddres, SortContourMode sortMod
 }
 
 /// sample API to read a null pointer and return a sample json string
-SPYLIB_API ReturnData readDummyTree(void* dummy) {
+ReturnData readDummyTree(void* dummy) {
 
 	json aSampleTree = {
 		{ "name", "root" },

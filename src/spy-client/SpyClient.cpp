@@ -1,5 +1,5 @@
 #include "SpyClient.h"
-#include "ScopeAutoFunction.hpp"
+#include "SpyClientUtils.hpp"
 
 #include <tlhelp32.h>
 #include <string>
@@ -28,7 +28,7 @@ int inline ReadDataFromRemoteProcess(HANDLE hProcess, void* remoteAddress, void*
 	return 0;
 }
 
-SpyClient::SpyClient() : _hTargetProcess(nullptr), _dwProcessId(0), _spyRootRemote(nullptr) {
+SpyClient::SpyClient() : _hTargetProcess(nullptr), _dwProcessId(0), _spyRootRemote(nullptr), _spyRootRemoteModule(nullptr) {
 }
 
 SpyClient::~SpyClient() {
@@ -107,7 +107,7 @@ std::string SpyClient::getModuleName(const std::string& dllPath) {
 #endif //_WIN32
 }
 
-bool SpyClient::startMonitorProcess(const char* processName, const std::string& rootDllPath, const std::list<std::string>& dependencyDllPaths) {
+bool SpyClient::inject(const char* processName, const std::string& rootDllPath, const std::list<std::string>& dependencyDllPaths) {
 	_processName = processName;
 
 	_dwProcessId = getProcessByName(processName);
@@ -133,7 +133,7 @@ bool SpyClient::startMonitorProcess(const char* processName, const std::string& 
 		}
 	}
 
-	HMODULE rootBaseModule = injectDLL(_rootSpyDllPath);
+	_spyRootRemoteModule = injectDLL(_rootSpyDllPath);
 
 	// compute root function address in remote process
 	// base on module base and relative offset between module base
@@ -159,24 +159,40 @@ bool SpyClient::startMonitorProcess(const char* processName, const std::string& 
 	size_t spyRootRelativeAddress = (size_t)spyRootLocal - (size_t)localHandle;
 
 	// then, calculate function address in remote process
-	_spyRootRemote = (char*)rootBaseModule + spyRootRelativeAddress;
+	_spyRootRemote = (char*)_spyRootRemoteModule + spyRootRelativeAddress;
 
 	cout << "monitor process " << processName << " started!" << std::endl;
 	return true;
 }
 
-bool SpyClient::stopMonitorProcess() {
-	if (_hTargetProcess != NULL) {
-		BOOL res = CloseHandle(_hTargetProcess);
-		_hTargetProcess = NULL;
-		return res != FALSE;
+bool SpyClient::uninject() {
+	if (_hTargetProcess == NULL) {
+		return false;
+	}
+	if (_spyRootRemoteModule != nullptr) {
+		// uninject spy root dll
+		HMODULE hKernel32 = ::GetModuleHandle("Kernel32");
+		void* remoteFreeLibrary = ::GetProcAddress(hKernel32, "FreeLibrary");
+		DWORD freeLiraryResult = 0;
+		bool res = executeRemoteCommand(remoteFreeLibrary, _spyRootRemoteModule, &freeLiraryResult);
+		if (res == false || freeLiraryResult == FALSE) {
+			cout << "uninject root spy dll failed" << std::endl;
+			return false;
+		}
+
 	}
 
-	return false;
+	BOOL res = CloseHandle(_hTargetProcess);
+	if (!res) {
+		cout << "Close remote process handle failed" << std::endl;
+	}
+	_hTargetProcess = nullptr;
+	_spyRootRemoteModule = nullptr;
+	return res != FALSE;
 }
 
-bool SpyClient::restartMonitorProcess() {
-	return startMonitorProcess(_processName.c_str(), _rootSpyDllPath, _dependencyDllPaths);
+bool SpyClient::reinject() {
+	return inject(_processName.c_str(), _rootSpyDllPath, _dependencyDllPaths);
 }
 
 bool SpyClient::checkTargetAvaible() {
@@ -212,13 +228,34 @@ bool SpyClient::checkTargetAvaible() {
 	return expectedPath == actualPath;
 }
 
+bool SpyClient::executeRemoteCommand(void* remoteProc, void* remoteData, DWORD* executeResult) {
+	HANDLE hThread = ::CreateRemoteThread(_hTargetProcess, NULL, 0,
+		(LPTHREAD_START_ROUTINE)remoteProc,
+		remoteData, 0, NULL);
+	if (hThread == NULL) {
+		cout << "cannot execute function in remote process, GLE=" << GetLastError() << std::endl;
+		return false;
+	}
+
+	::WaitForSingleObject(hThread, INFINITE);
+
+	if (executeResult) {
+		::GetExitCodeThread(hThread, executeResult);
+	}
+
+	// Clean up
+	::CloseHandle(hThread);
+
+	return true;
+}
+
 bool SpyClient::executeRemoteCommand(void* remoteProc, const void* data, int dataSize, DWORD* executeResult, void** pptrRemote) {
-	cout << __FUNCTION__ << std::endl;
+	//cout << __FUNCTION__ << std::endl;
 	if (_hTargetProcess == nullptr) {
 		cout << "Invalid process handle" << std::endl;
 		return false;
 	}
-	HANDLE hThread;
+
 	void*   pRemoteData = nullptr;
 	SIZE_T numberOfBytes;
 
@@ -253,24 +290,7 @@ bool SpyClient::executeRemoteCommand(void* remoteProc, const void* data, int dat
 		return false;
 	}
 
-	hThread = ::CreateRemoteThread(_hTargetProcess, NULL, 0,
-		(LPTHREAD_START_ROUTINE)remoteProc,
-		pRemoteData, 0, NULL);
-	if (hThread == NULL) {
-		cout << "cannot execute function in remote process, GLE=" << GetLastError() << std::endl;
-		return false;
-	}
-
-	::WaitForSingleObject(hThread, INFINITE);
-
-	if (executeResult) {
-		::GetExitCodeThread(hThread, executeResult);
-	}
-
-	// Clean up
-	::CloseHandle(hThread);
-
-	return true;
+	return executeRemoteCommand(remoteProc, pRemoteData, executeResult);
 }
 
 HMODULE SpyClient::injectDLL(const std::string& dllPath) {
@@ -295,8 +315,8 @@ HMODULE SpyClient::injectDLL(const std::string& dllPath) {
 	return hRemoteLib;
 }
 
-int SpyClient::sendCommandToRemoteThread(void* commandData, int commandSize, ReturnData* pReturnData, DWORD* executeResult) {
-	cout << __FUNCTION__ << std::endl;
+int SpyClient::sendCommandToRemoteThread(void* commandData, int commandSize, bool readComandBack, DWORD* executeResult) {
+	//cout << __FUNCTION__ << std::endl;
 	void*   pRemoteData = nullptr;
 
 	// auto free remote buffer function
@@ -314,11 +334,8 @@ int SpyClient::sendCommandToRemoteThread(void* commandData, int commandSize, Ret
 		return -1;
 	}
 
-	if (pReturnData) {
-		constexpr int returnDataOffset = offsetof(CustomCommandCmdData, returnData);
-		void* returnDataRemote = (char*)pRemoteData + returnDataOffset;
-
-		int iRes = ReadDataFromRemoteProcess(_hTargetProcess, returnDataRemote, pReturnData, sizeof(ReturnData));
+	if (readComandBack) {
+		int iRes = ReadDataFromRemoteProcess(_hTargetProcess, pRemoteData, commandData, commandSize);
 		if (iRes != 0) {
 			return iRes;
 		}
@@ -327,8 +344,8 @@ int SpyClient::sendCommandToRemoteThread(void* commandData, int commandSize, Ret
 	return 0;
 }
 
-int SpyClient::sendCommandToRemoteThread(BaseCmdData* commandData, ReturnData* pReturnData, DWORD* executeResult) {
-	return sendCommandToRemoteThread(commandData, commandData->commandSize, pReturnData, executeResult);
+int SpyClient::sendCommandToRemoteThread(BaseCmdData* commandData, bool readComandBack, DWORD* executeResult) {
+	return sendCommandToRemoteThread(commandData, commandData->commandSize, readComandBack, executeResult);
 }
 
 int SpyClient::readCustomCommandResult(ReturnData* pReturnData, void** ppCustomData) {
@@ -368,14 +385,47 @@ int SpyClient::freeCustomCommandResult(ReturnData* pReturnData) {
 	return sendCommandToRemoteThread((BaseCmdData*)&cmdData);
 }
 
-int SpyClient::loadCustomDynamicFunction(const char* dllFile, const char* functions[], int functionCount, list<CustomCommandId>& loadedCustomFunctions, HMODULE* phModule) {
+int SpyClient::loadPredefinedFunctions(const char* dllFile, HMODULE* phModule) {
+	size_t size = strlen(dllFile) + 1;
+	vector<char> rawParam(size + (sizeof(LoadPredefinedCmdData) - sizeof(LoadPredefinedCmdData::dllName)));
+
+	LoadPredefinedCmdData& loadPredefinedFunctionCmdData = *(LoadPredefinedCmdData*)rawParam.data();
+	loadPredefinedFunctionCmdData.commandId = CommandId::LOAD_PREDEFINED_FUNCTIONS;
+	loadPredefinedFunctionCmdData.commandSize = (int)rawParam.size();
+	auto& returnData = loadPredefinedFunctionCmdData.returnData;
+
+	// fill dll file and function names to buffer
+	char* buffer = loadPredefinedFunctionCmdData.dllName;
+	memcpy_s(buffer, size, dllFile, size);
+
+	// call load predefined functions in remote thread and retreive return value from remote function
+	DWORD functionReturnVal;
+	int iRes = sendCommandToRemoteThread((BaseCmdData*)&loadPredefinedFunctionCmdData, true, &functionReturnVal);
+	if (iRes != 0) {
+		return iRes;
+	}
+	// check the return data size
+	if (returnData.sizeOfCustomData != 0) {
+		cout << "return data by load predefined function is not correct" << std::endl;
+		return -1;
+	}
+
+	// fill the return data to local output data
+	if (phModule) {
+		*phModule = (HMODULE)returnData.customData;
+	}
+
+	return (int)functionReturnVal;
+}
+
+int SpyClient::loadDynamicFunctions(const char* dllFile, const char* functions[], int functionCount, list<CustomCommandId>& loadedCustomFunctions, HMODULE* phModule) {
 	size_t totalSize = 0;
 	size_t size;
 
 	// compute size of buffer to store dll file and function names
 	totalSize = strlen(dllFile) + 1;
 	for (int i = 0; i < functionCount; i++) {
-		totalSize = strlen(functions[i]) + 1;
+		totalSize += strlen(functions[i]) + 1;
 	}
 
 	// prepare command buffer
@@ -398,14 +448,14 @@ int SpyClient::loadCustomDynamicFunction(const char* dllFile, const char* functi
 	}
 
 	// call load custom functions in remote thread
-	int iRes = sendCommandToRemoteThread((BaseCmdData*)&loadCustomFunctionCmdData, &returnData);
+	int iRes = sendCommandToRemoteThread((BaseCmdData*)&loadCustomFunctionCmdData, true);
+	if (returnData.sizeOfCustomData != sizeof(HMODULE) + functionCount * sizeof(CustomCommandId)) {
+		cout << "return data by load custom function is not correct" << std::endl;
+		return -1;
 	if (iRes != 0) {
 		return iRes;
 	}
 	// check the return data size
-	if (returnData.sizeOfCustomData != sizeof(HMODULE) + functionCount * sizeof(CustomCommandId)) {
-		cout << "return data by load custom function is not correct" << std::endl;
-		return -1;
 	}
 
 	char* rawData;
@@ -419,8 +469,7 @@ int SpyClient::loadCustomDynamicFunction(const char* dllFile, const char* functi
 	if (phModule) {
 		*phModule = *((HMODULE*)rawData);
 	}
-	rawData += sizeof(HMODULE);
-	CustomCommandId* pCmdId = (CustomCommandId*)rawData;
+	CustomCommandId* pCmdId = (CustomCommandId*)(rawData + sizeof(HMODULE));
 
 	for (int i = 0; i < functionCount; i++) {
 		loadedCustomFunctions.push_back(*pCmdId++);
@@ -430,4 +479,19 @@ int SpyClient::loadCustomDynamicFunction(const char* dllFile, const char* functi
 
 	int freeBufferRes = freeCustomCommandResult(&returnData);
 	return iRes;
+}
+
+int SpyClient::unloadModule(HMODULE hModule) {
+	UnloadModuleCmdData cmdData;
+	cmdData.commandId = CommandId::UNLOAD_MODULE;
+	cmdData.commandSize = sizeof(UnloadModuleCmdData);
+	cmdData.hModule = hModule;
+
+	// call load predefined functions in remote thread and retreive return value from remote function
+	DWORD functionReturnVal;
+	int iRes = sendCommandToRemoteThread((BaseCmdData*)&cmdData, false, &functionReturnVal);
+	if (iRes != 0) {
+		return iRes;
+	}
+	return (int)functionReturnVal;
 }

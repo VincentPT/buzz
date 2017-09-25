@@ -33,6 +33,7 @@ BuzzWindow::BuzzWindow(ci::app::WindowRef nativeWindow) : _nativeWindow(nativeWi
 
 BuzzWindow::~BuzzWindow()
 {
+	_spyClient->stopMonitorProcess();
 }
 
 void BuzzWindow::setupWindow() {
@@ -142,7 +143,7 @@ void BuzzWindow::draw() {
 			auto changeLineWidth = [this](BuzzDrawObj* obj) {
 				auto lineObj = dynamic_cast<BuzzHasLine*>(obj);
 				if (lineObj) {
-					lineObj->setLineWidth(_objectLineWidth);
+					lineObj->setLineWidth((float)_objectLineWidth);
 				}
 			};
 

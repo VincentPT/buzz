@@ -98,7 +98,7 @@ void BuzzApp::onClipboardTextChanged(const std::string& text) {
 		buzzWindow->showInputerWithAddress(address);
 	}
 	else if (text == "tree") {
-		buzzWindow->readObject(nullptr, (int)CustomCommandId::READ_DUMMYTREE);
+		buzzWindow->readObject(nullptr, (int)UserCommandId::READ_DUMMYTREE);
 	}
 	else {
 		cout << "check clipboard for visual studio's copied text" << std::endl;
@@ -116,18 +116,18 @@ void BuzzApp::onClipboardTextChanged(const std::string& text) {
 			}
 
 			map<string, int> supportedTypes = {
-				{ "cv::Mat *", (int)CustomCommandId::OPENCV_READ_MAT_OBJECT},
-				{ "const cv::Mat *", (int)CustomCommandId::OPENCV_READ_MAT_OBJECT},
-				{ "cv::Rect_<int> *", (int)CustomCommandId::OPENCV_READ_CVRECT_OBJECT },
-				{ "const cv::Rect_<int> *", (int)CustomCommandId::OPENCV_READ_CVRECT_OBJECT },
-				{ "cv::Point_<int> *", (int)CustomCommandId::OPENCV_READ_CVPOINT_OBJECT },
-				{ "const cv::Point_<int> *", (int)CustomCommandId::OPENCV_READ_CVPOINT_OBJECT },
-				{ "std::vector<cv::Point_<int>,std::allocator<cv::Point_<int> > > *", (int)CustomCommandId::OPENCV_READ_CVCONTOUR },
-				{ "const std::vector<cv::Point_<int>,std::allocator<cv::Point_<int> > > *", (int)CustomCommandId::OPENCV_READ_CVCONTOUR },
-				{ "std::vector<std::vector<cv::Point_<int>,std::allocator<cv::Point_<int> > >,std::allocator<std::vector<cv::Point_<int>,std::allocator<cv::Point_<int> > > > > *", (int)CustomCommandId::OPENCV_READ_CVCONTOURS },
-				{ "const std::vector<std::vector<cv::Point_<int>,std::allocator<cv::Point_<int> > >,std::allocator<std::vector<cv::Point_<int>,std::allocator<cv::Point_<int> > > > > *", (int)CustomCommandId::OPENCV_READ_CVCONTOURS },
-				{ "cv::Point_<float> *", (int)CustomCommandId::OPENCV_READ_CVPOINT2F_OBJECT },
-				{ "const cv::Point_<float> *", (int)CustomCommandId::OPENCV_READ_CVPOINT2F_OBJECT },
+				{ "cv::Mat *", (int)UserCommandId::OPENCV_READ_MAT_OBJECT},
+				{ "const cv::Mat *", (int)UserCommandId::OPENCV_READ_MAT_OBJECT},
+				{ "cv::Rect_<int> *", (int)UserCommandId::OPENCV_READ_CVRECT_OBJECT },
+				{ "const cv::Rect_<int> *", (int)UserCommandId::OPENCV_READ_CVRECT_OBJECT },
+				{ "cv::Point_<int> *", (int)UserCommandId::OPENCV_READ_CVPOINT_OBJECT },
+				{ "const cv::Point_<int> *", (int)UserCommandId::OPENCV_READ_CVPOINT_OBJECT },
+				{ "std::vector<cv::Point_<int>,std::allocator<cv::Point_<int> > > *", (int)UserCommandId::OPENCV_READ_CVCONTOUR },
+				{ "const std::vector<cv::Point_<int>,std::allocator<cv::Point_<int> > > *", (int)UserCommandId::OPENCV_READ_CVCONTOUR },
+				{ "std::vector<std::vector<cv::Point_<int>,std::allocator<cv::Point_<int> > >,std::allocator<std::vector<cv::Point_<int>,std::allocator<cv::Point_<int> > > > > *", (int)UserCommandId::OPENCV_READ_CVCONTOURS },
+				{ "const std::vector<std::vector<cv::Point_<int>,std::allocator<cv::Point_<int> > >,std::allocator<std::vector<cv::Point_<int>,std::allocator<cv::Point_<int> > > > > *", (int)UserCommandId::OPENCV_READ_CVCONTOURS },
+				{ "cv::Point_<float> *", (int)UserCommandId::OPENCV_READ_CVPOINT2F_OBJECT },
+				{ "const cv::Point_<float> *", (int)UserCommandId::OPENCV_READ_CVPOINT2F_OBJECT },
 			};
 			auto it = supportedTypes.find(stype);
 

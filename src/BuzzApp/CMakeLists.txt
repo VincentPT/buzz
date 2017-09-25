@@ -79,13 +79,13 @@ SET (DIALOG_SOURCES
 SET (UTILITIES
     utils/ClipboardViewer.h
     utils/ClipboardViewer.cpp
-    utils/SpyClient.cpp
-    utils/SpyClient.h
     utils/string_util.hpp
     utils/string_util.cpp
-    utils/ScopeAutoFunction.hpp
     utils/BuzzSpyClient.cpp
     utils/BuzzSpyClient.h
+    ../spy-client/SpyClient.cpp
+    ../spy-client/SpyClient.h
+    ../spy-client/SpyClientUtils.hpp
 )
 
 SET (DRAWOBJS
@@ -119,16 +119,25 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/cinder/bl
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/spy)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/spylib)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/json)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/spy-client)
 
 target_link_libraries(${PROJECT_NAME} cinder Comctl32)
 # set_target_properties( ${PROJECT_NAME} PROPERTIES LINK_FLAGS_DEBUG "/NODEFAULTLIB:LIBCMT /NODEFAULTLIB:LIBCPMT" )
 # target_compile_options(${PROJECT_NAME} PRIVATE /utf-8)
 
-add_dependencies(${PROJECT_NAME} spy)
+add_dependencies(${PROJECT_NAME} spylib)
 
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/spy/$<CONFIGURATION>/spy.dll ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>/)
+if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+    SET (PLATFORM x64)
+else( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+    SET (PLATFORM x86)
+endif( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/spy/${PLATFORM}/$<CONFIGURATION>/spy-engine-1.0.dll ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>/)
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/spylib/$<CONFIGURATION>/spylib.dll ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>/)
 
-SET (INSTALL_DEST ${CMAKE_BINARY_DIR}/bin/)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Debug/${PROJECT_NAME}.exe DESTINATION ${INSTALL_DEST} CONFIGURATIONS Debug)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Release/${PROJECT_NAME}.exe DESTINATION ${INSTALL_DEST} CONFIGURATIONS Release)
+SET (INSTALL_DEST ${CMAKE_BINARY_DIR}/bin/${PLATFORM}/)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Debug/${PROJECT_NAME}.exe DESTINATION ${INSTALL_DEST}/debug CONFIGURATIONS Debug)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Release/${PROJECT_NAME}.exe DESTINATION ${INSTALL_DEST}/release CONFIGURATIONS Release)
+install(FILES ${CMAKE_SOURCE_DIR}/spy/${PLATFORM}/debug/spy-engine-1.0.dll DESTINATION ${INSTALL_DEST}/debug CONFIGURATIONS Debug)
+install(FILES ${CMAKE_SOURCE_DIR}/spy/${PLATFORM}/release/spy-engine-1.0.dll DESTINATION ${INSTALL_DEST}/release CONFIGURATIONS Release)

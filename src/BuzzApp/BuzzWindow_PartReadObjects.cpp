@@ -14,7 +14,7 @@ BuzzDrawObj* BuzzWindow::readObject(void* desireReadObjectAddress, int type) {
 	//	return nullptr;
 	//}
 
-	if (type < 0 || type >= (int)CustomCommandId::CUSTOM_COMMAND_END) {
+	if (type < 0 || type >= (int)CUSTOM_COMMAND_END) {
 		return nullptr;
 	}
 

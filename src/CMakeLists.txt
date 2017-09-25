@@ -10,8 +10,5 @@ add_subdirectory(opencv)
 # spylib
 add_subdirectory(spylib)
 
-# spy engine
-add_subdirectory(spy)
-
 # buzz host application
 add_subdirectory(BuzzApp)
