@@ -1,8 +1,8 @@
 #pragma once
-#include "BuzzDrawObj.h"
+#include "BuzzHasLine.h"
 #include <vector>
 
-class BuzzPolygon : public BuzzDrawObj {
+class BuzzPolygon : public BuzzHasLine {
 protected:
 	std::vector<BuzzLocation> _points;
 public:

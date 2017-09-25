@@ -2,6 +2,7 @@
 #include "utils/ClipboardViewer.h"
 #include "pretzel/PretzelGui.h"
 #include "drawobjs/BuzzContainer.h"
+#include "drawobjs/BuzzHasLine.h"
 
 using namespace ci;
 using namespace ci::app;
@@ -86,14 +87,14 @@ void BuzzWindow::pendingUpdate() {
 
 }
 
-void applyLineColorForAll(BuzzDrawObj* obj, BuzzColor color) {
-	obj->setColor(color);
+void applyObjectSettingForAll(BuzzDrawObj* obj, const std::function<void(BuzzDrawObj* obj)>& f) {
+	f(obj);
 
 	auto pContainer = dynamic_cast<BuzzContainer*>(obj);
 	if (pContainer != nullptr) {
 		auto& children = pContainer->getChildren();
 		for (auto &aChildRef : children) {
-			applyLineColorForAll(aChildRef.get(), color);
+			applyObjectSettingForAll(aChildRef.get(), f);
 		}
 	}
 }
@@ -105,7 +106,12 @@ void applyLineColorForAll(BuzzDrawObj* obj, const ColorA& color) {
 	g = (int)(color.g * 255);
 	b = (int)(color.b * 255);
 	BuzzColor buzzColor = BUZZCOLOR(r, g, b, a);
-	applyLineColorForAll(obj, buzzColor);
+
+	auto changeColor = [&buzzColor](BuzzDrawObj* obj) {
+		obj->setColor(buzzColor);
+	};
+
+	applyObjectSettingForAll(obj, changeColor);
 }
 
 void BuzzWindow::draw() {
@@ -125,9 +131,25 @@ void BuzzWindow::draw() {
 	}
 
 	if (_objectSettingsDlgRef->isVisible()) {
-		_objectLine = _objectSettingsDlgRef->getObjectLineColor();
-		applyLineColorForAll(_rootObject.get(), _objectLine);
-		_needUpdate = true;
+		if (_objectLine != _objectSettingsDlgRef->getObjectLineColor()) {
+			_objectLine = _objectSettingsDlgRef->getObjectLineColor();
+			applyLineColorForAll(_rootObject.get(), _objectLine);
+			_needUpdate = true;
+		}
+		if (_objectLineWidth != _objectSettingsDlgRef->getLineWidth()) {
+			_objectLineWidth = _objectSettingsDlgRef->getLineWidth();
+			
+			auto changeLineWidth = [this](BuzzDrawObj* obj) {
+				auto lineObj = dynamic_cast<BuzzHasLine*>(obj);
+				if (lineObj) {
+					lineObj->setLineWidth(_objectLineWidth);
+				}
+			};
+
+			applyObjectSettingForAll(_rootObject.get(), changeLineWidth);
+
+			_needUpdate = true;
+		}
 	}
 
 	if(_needUpdate)

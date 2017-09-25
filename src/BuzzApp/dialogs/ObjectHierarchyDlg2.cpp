@@ -12,7 +12,6 @@ INT_PTR ObjectHierarchyDlg2::processMessage(HWND hwndDlg, UINT uMsg, WPARAM wPar
 	{
 	case WM_NOTIFY:
 		if (_stopNotify) {
-			printf_s("_stopNotify\n");
 			break;
 		}
 		nmhdr = (NMHDR*)lParam;

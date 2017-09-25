@@ -99,6 +99,8 @@ SET (DRAWOBJS
     drawobjs/BuzzPolygon.h
     drawobjs/BuzzRect.cpp
     drawobjs/BuzzRect.h
+    drawobjs/BuzzHasLine.cpp
+    drawobjs/BuzzHasLine.h
 )
     
 SET (SOURCES ${MAIN_SOURCES} ${PRETZEL_SOURCES} ${DIALOG_SOURCES} ${UTILITIES} ${DRAWOBJS})

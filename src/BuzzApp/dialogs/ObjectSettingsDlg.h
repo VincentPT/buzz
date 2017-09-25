@@ -9,6 +9,7 @@ class ObjectSettingsDlg : public BuzzDialog {
 	ci::ColorA					_objBckColor;
 	// object's line color
 	ci::ColorA					_objLineColor;
+	int							_lineWidth = 1;
 private:
 
 public:
@@ -26,4 +27,6 @@ public:
 
 	// set object's line color
 	void setObjectLineColor(const ci::ColorA&);
+
+	int getLineWidth() const;
 };

@@ -30,6 +30,12 @@ INT_PTR Win32Dlg::processMessage(HWND hwndDlg, UINT uMsg, WPARAM wParam,  LPARAM
 			onCancle();
 			return TRUE;
 		}
+	case WM_KEYDOWN:
+		if(wParam == VK_ESCAPE) {
+			onCancle();
+			return TRUE;
+		}
+		break;
 	}
 	return FALSE;
 }

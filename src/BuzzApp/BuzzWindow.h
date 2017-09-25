@@ -25,6 +25,7 @@ class BuzzWindow
 	ci::app::WindowRef						_nativeWindow;	
 	ci::ColorA*								_bckColor;
 	ci::ColorA								_objectLine;
+	int										_objectLineWidth = 1;
 	ci::gl::Texture2dRef					_tex;
 	ci::gl::FboRef							_frameBuffer;
 	glm::mat4								_transform;

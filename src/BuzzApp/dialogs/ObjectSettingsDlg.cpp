@@ -11,6 +11,7 @@ ObjectSettingsDlg::ObjectSettingsDlg(ci::app::WindowRef window) :
 
 	nativeDlg->addColorPicker("object background color", &_objBckColor);
 	nativeDlg->addColorPicker("object line color", &_objLineColor);
+	nativeDlg->addSlider("line with", &_lineWidth, 1, 10);
 }
 ObjectSettingsDlg::~ObjectSettingsDlg() {}
 
@@ -30,4 +31,8 @@ void ObjectSettingsDlg::setObjectBckColor(const ci::ColorA& color) {
 // set object's line color
 void ObjectSettingsDlg::setObjectLineColor(const ci::ColorA& color) {
 	_objLineColor = color;
+}
+
+int ObjectSettingsDlg::getLineWidth() const {
+	return _lineWidth;
 }

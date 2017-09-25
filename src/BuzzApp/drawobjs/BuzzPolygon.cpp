@@ -26,8 +26,8 @@ void BuzzPolygon::draw() {
 		return;
 	}
 
-	constexpr float lineW = 2;
 	gl::ScopedColor scopeColor(BCRED(_rgba) / 255.0f, BCGREEN(_rgba) / 255.0f, BCBLUE(_rgba) / 255.0f, BCALPHA(_rgba) / 255.0f);
+	gl::ScopedLineWidth scopeLineWidth(_lineWidth);
 	
 	// We're going to draw a line through all the points in the list
 	// using a few convenience functions: 'begin' will tell OpenGL to

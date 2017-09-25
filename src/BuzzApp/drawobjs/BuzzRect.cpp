@@ -31,8 +31,7 @@ void BuzzRect::draw() {
 		return;
 	}
 
-	constexpr float lineW = 2;
 	gl::ScopedColor scopeColor(BCRED(_rgba)/255.0f, BCGREEN(_rgba) / 255.0f, BCBLUE(_rgba) / 255.0f, BCALPHA(_rgba) / 255.0f);
 	auto rect = ci::Rectf(_location.x, _location.y, _location.x + _size.x, _location.y + _size.y);
-	gl::drawStrokedRect(rect, lineW);
+	gl::drawStrokedRect(rect, _lineWidth);
 }

@@ -1,7 +1,7 @@
 #pragma once
-#include "BuzzDrawObj.h"
+#include "BuzzHasLine.h"
 
-class BuzzRect : public BuzzDrawObj {
+class BuzzRect : public BuzzHasLine {
 protected:
 	BuzzLocation _location;
 	BuzzLocation _size;
