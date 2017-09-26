@@ -9,7 +9,10 @@ enum class CommandId : unsigned short
 };
 
 typedef unsigned short CustomCommandId;
+typedef int ModuleId;
+
 #define	CUSTOM_COMMAND_END  0xFFFF
+#define	INVALID_MODULE_ID  (0xFFFFFFFF)
 
 #pragma pack(push, 1)
 struct ReturnData {
@@ -30,18 +33,30 @@ struct FreeBufferCmdData {
 	int bufferSize;
 };
 
+struct LoadPredefinedReturnData {
+	void* hModule;
+	ModuleId moduleId;
+};
+
 struct LoadPredefinedCmdData {
 	int commandSize;
 	CommandId commandId;
-	ReturnData returnData;// return data, in customData field, contain HMODULE value
+	ReturnData returnData;// return data, in customData field, contain a pointer of LoadPredefinedReturnData
 	char dllName[1];
+};
+
+struct LoadCustomFunctionsReturnData {
+	void* hModule;
+	ModuleId moduleId;
+	CustomCommandId cmdIds[1];
 };
 
 struct LoadCustomFunctionsCmdData {
 	int commandSize;
 	CommandId commandId;
-	ReturnData returnData;		// return data, in customData field, leading by module base(8 or 4 bytes depend on platform)
+	ReturnData returnData;		// return data, in customData field, leading by RemoteModuleInfo
 								// then each two-byte after contain function id coressponding with each function name
+								// use CustomFunctionsReturnData to populate customData field;
 
 	char fNames[1];				// leading by dll name then function names. Seperated by zero character and terminate by zero
 };
@@ -49,7 +64,7 @@ struct LoadCustomFunctionsCmdData {
 struct UnloadModuleCmdData {
 	int commandSize;
 	CommandId commandId;
-	void* hModule;
+	int moduleId;
 };
 
 

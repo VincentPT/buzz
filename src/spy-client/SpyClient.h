@@ -38,7 +38,7 @@ public:
 	// load predefined function in a spy library file
 	// return -1 if failed,
 	// incase success, hi word word is number of loadded command, low word is command id base for the predefined command
-	int loadPredefinedFunctions(const char* dllFile, HMODULE* phModule = nullptr);
-	int loadDynamicFunctions(const char* dllFile, const char* functions[], int functionCount, std::list<CustomCommandId>& loadedCustomFunctions, HMODULE* phModule = nullptr);
-	int unloadModule(HMODULE hModule);
+	int loadPredefinedFunctions(const char* dllFile, ModuleId* moduleId = nullptr);
+	int loadDynamicFunctions(const char* dllFile, const char* functions[], int functionCount, std::list<CustomCommandId>& loadedCustomFunctions, ModuleId* moduleId = nullptr);
+	int unloadModule(ModuleId moduleId);
 };

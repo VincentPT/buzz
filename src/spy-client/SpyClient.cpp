@@ -297,21 +297,19 @@ HMODULE SpyClient::injectDLL(const std::string& dllPath) {
 	string moduleName = getModuleName(dllPath);
 	string modulePath;
 
-	// first, check if the module is already load into remote process
-	HMODULE hRemoteLib = getModuleByName(GetProcessId(_hTargetProcess), moduleName.c_str(), modulePath);
-	if (hRemoteLib == nullptr) {
-
-		HMODULE hKernel32 = ::GetModuleHandle("Kernel32");
-		void* remoteLoadLibraryFuncAddress = ::GetProcAddress(hKernel32, "LoadLibraryA");
-		DWORD moduleBase32 = 0;
-		bool res = executeRemoteCommand(remoteLoadLibraryFuncAddress, dllPath.c_str(), (int)(dllPath.size() + 1), &moduleBase32);
-		if (res == false) {
-			cout << "inject dll '" << dllPath << "' failed" << std::endl;
-			return nullptr;
-		}
-		hRemoteLib = getModuleByName(GetProcessId(_hTargetProcess), moduleName.c_str(), modulePath);
+	HMODULE hKernel32 = ::GetModuleHandle("Kernel32");
+	void* remoteLoadLibraryFuncAddress = ::GetProcAddress(hKernel32, "LoadLibraryA");
+	DWORD moduleBase32 = 0;
+	bool res = executeRemoteCommand(remoteLoadLibraryFuncAddress, dllPath.c_str(), (int)(dllPath.size() + 1), &moduleBase32);
+	if (res == false) {
+		cout << "inject dll '" << dllPath << "' failed" << std::endl;
+		return nullptr;
 	}
-
+#ifdef  _WIN64
+	auto hRemoteLib = getModuleByName(GetProcessId(_hTargetProcess), moduleName.c_str(), modulePath);
+#else
+	auto hRemoteLib = (HMODULE)moduleBase32;
+#endif //  _WIN64
 	return hRemoteLib;
 }
 
@@ -385,7 +383,7 @@ int SpyClient::freeCustomCommandResult(ReturnData* pReturnData) {
 	return sendCommandToRemoteThread((BaseCmdData*)&cmdData);
 }
 
-int SpyClient::loadPredefinedFunctions(const char* dllFile, HMODULE* phModule) {
+int SpyClient::loadPredefinedFunctions(const char* dllFile, ModuleId* pModuleId) {
 	size_t size = strlen(dllFile) + 1;
 	vector<char> rawParam(size + (sizeof(LoadPredefinedCmdData) - sizeof(LoadPredefinedCmdData::dllName)));
 
@@ -405,20 +403,30 @@ int SpyClient::loadPredefinedFunctions(const char* dllFile, HMODULE* phModule) {
 		return iRes;
 	}
 	// check the return data size
-	if (returnData.sizeOfCustomData != 0) {
+	if (returnData.sizeOfCustomData != sizeof(LoadPredefinedReturnData)) {
 		cout << "return data by load predefined function is not correct" << std::endl;
 		return -1;
 	}
 
-	// fill the return data to local output data
-	if (phModule) {
-		*phModule = (HMODULE)returnData.customData;
+	LoadPredefinedReturnData* pLoadPredefinedReturnData;
+	// read return buffer from remote process
+	iRes = readCustomCommandResult(&returnData, (void**)&pLoadPredefinedReturnData);
+	if (iRes != 0) {
+		return iRes;
 	}
+
+	// fill the return data to local output data
+	if (pModuleId) {
+		*pModuleId = pLoadPredefinedReturnData->moduleId;
+	}
+
+	free(pLoadPredefinedReturnData);
+	int freeBufferRes = freeCustomCommandResult(&returnData);
 
 	return (int)functionReturnVal;
 }
 
-int SpyClient::loadDynamicFunctions(const char* dllFile, const char* functions[], int functionCount, list<CustomCommandId>& loadedCustomFunctions, HMODULE* phModule) {
+int SpyClient::loadDynamicFunctions(const char* dllFile, const char* functions[], int functionCount, list<CustomCommandId>& loadedCustomFunctions, ModuleId* pModuleId) {
 	size_t totalSize = 0;
 	size_t size;
 
@@ -449,7 +457,7 @@ int SpyClient::loadDynamicFunctions(const char* dllFile, const char* functions[]
 
 	// call load custom functions in remote thread
 	int iRes = sendCommandToRemoteThread((BaseCmdData*)&loadCustomFunctionCmdData, true);
-	if (returnData.sizeOfCustomData != sizeof(HMODULE) + functionCount * sizeof(CustomCommandId)) {
+	if (returnData.sizeOfCustomData != sizeof(LoadCustomFunctionsReturnData) - sizeof(LoadCustomFunctionsReturnData::cmdIds) + functionCount * sizeof(CustomCommandId)) {
 		cout << "return data by load custom function is not correct" << std::endl;
 		return -1;
 	if (iRes != 0) {
@@ -458,7 +466,7 @@ int SpyClient::loadDynamicFunctions(const char* dllFile, const char* functions[]
 	// check the return data size
 	}
 
-	char* rawData;
+	LoadCustomFunctionsReturnData* rawData;
 	// read return buffer from remote process
 	iRes = readCustomCommandResult(&returnData, (void**)&rawData);
 	if (iRes != 0) {
@@ -466,10 +474,10 @@ int SpyClient::loadDynamicFunctions(const char* dllFile, const char* functions[]
 	}
 
 	// fill the return data to local output data
-	if (phModule) {
-		*phModule = *((HMODULE*)rawData);
+	if (pModuleId) {
+		*pModuleId = rawData->moduleId;
 	}
-	CustomCommandId* pCmdId = (CustomCommandId*)(rawData + sizeof(HMODULE));
+	CustomCommandId* pCmdId = rawData->cmdIds;
 
 	for (int i = 0; i < functionCount; i++) {
 		loadedCustomFunctions.push_back(*pCmdId++);
@@ -481,11 +489,11 @@ int SpyClient::loadDynamicFunctions(const char* dllFile, const char* functions[]
 	return iRes;
 }
 
-int SpyClient::unloadModule(HMODULE hModule) {
+int SpyClient::unloadModule(ModuleId moduleId) {
 	UnloadModuleCmdData cmdData;
 	cmdData.commandId = CommandId::UNLOAD_MODULE;
 	cmdData.commandSize = sizeof(UnloadModuleCmdData);
-	cmdData.hModule = hModule;
+	cmdData.moduleId = moduleId;
 
 	// call load predefined functions in remote thread and retreive return value from remote function
 	DWORD functionReturnVal;
