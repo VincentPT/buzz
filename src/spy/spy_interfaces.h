@@ -72,7 +72,7 @@ struct CustomCommandCmdData {
 *
 *   getPredefinedFunctionCount should return number predefined function that the user want to loaded to the engine
 **/
-typedef int(__stdcall *FGetPredefinedFunctionCount)();
+typedef int(*FGetPredefinedFunctionCount)();
 
 /**
 *   brief an function interface that should be called in user's spy library, at the time of loadPredefinedFunctions is executed
@@ -85,7 +85,7 @@ typedef int(__stdcall *FGetPredefinedFunctionCount)();
 *
 *   setPredefinedFunction return zero incase the command loaded success, non zero if not
 **/
-typedef int(__stdcall *FSetPredefinedFunction)(void* context, CustomCommandId cmdId, void* address);
+typedef int(*FSetPredefinedFunction)(void* context, CustomCommandId cmdId, void* address);
 
 /**
 *   brief an function interface that will be called in spy engine, when a spy app send command LOAD_PREDEFINED_FUNCTIONS to the engine
@@ -99,7 +99,7 @@ typedef int(__stdcall *FSetPredefinedFunction)(void* context, CustomCommandId cm
 *   loadPredefinedFunctions should return zero to the engine know that loaded function should be kept in the engine for using in future
 *                           or nonzero to notify that the engine should discard the loadding result
 **/
-typedef int(__stdcall *FLoadPredefinedFunctions)(void* context, FSetPredefinedFunction fx, CustomCommandId cmdBase);
+typedef int(*FLoadPredefinedFunctions)(void* context, FSetPredefinedFunction fx, CustomCommandId cmdBase);
 
 #define MAKE_RESULT_OF_LOAD_PREDEFINED_FUNC(n, base) (((n) << 16) | ((base) & 0xFFFF))
 #define GET_NUMBER_OF_LOAD_PREDEFINED_FUNC(res) ((res) >> 16)
