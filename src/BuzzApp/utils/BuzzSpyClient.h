@@ -7,10 +7,11 @@
 
 class BuzzSpyClient : public SpyClient {
 	CustomCommandId _predefinedBase;
-	HMODULE _hSpyLib;
+	void* _checkFunctionPtrs[(int)UserCommandId::PRE_DEFINED_COMMAND_COUNT];
+	ModuleId _hSpyLib;
 protected:
 	void setPredefinedCommandIdBase(int predefinedBase);
-	void loadSpyLib();
+	bool loadSpyLib();
 	void unloadSpyLib();
 public:
 	BuzzSpyClient();
@@ -19,6 +20,7 @@ public:
 	bool startMonitorProcess(const char* processName);
 	bool stopMonitorProcess();
 	bool restartMonitorProcess();
+	bool checkCommandsReady();
 	
 	int readCVMat(void* address, const std::function<void(ImageRawData*&)>& handler);
 	int readCVPoint(void* address, const std::function<void(PointRawData*&)>& handler);

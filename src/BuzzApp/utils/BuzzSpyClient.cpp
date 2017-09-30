@@ -9,7 +9,7 @@ using namespace std;
 
 #define SPY_LIB_NAME "spylib.dll"
 
-BuzzSpyClient::BuzzSpyClient() : _predefinedBase(CUSTOM_COMMAND_END), _hSpyLib(nullptr) {
+BuzzSpyClient::BuzzSpyClient() : _predefinedBase(CUSTOM_COMMAND_END), _hSpyLib(INVALID_MODULE_ID) {
 }
 
 BuzzSpyClient::~BuzzSpyClient() {
@@ -20,7 +20,7 @@ void BuzzSpyClient::setPredefinedCommandIdBase(int predefinedBase) {
 	_predefinedBase = (CustomCommandId)predefinedBase;
 }
 
-void BuzzSpyClient::loadSpyLib() {
+bool BuzzSpyClient::loadSpyLib() {
 	cout << "loading spy lib " SPY_LIB_NAME << endl;
 
 	int ret = loadPredefinedFunctions(SPY_LIB_NAME, &_hSpyLib);
@@ -33,15 +33,27 @@ void BuzzSpyClient::loadSpyLib() {
 
 	// store command id base and use it to invoke inside the UserSpyClient methods
 	setPredefinedCommandIdBase(commandBase);
+
+	bool res = (loadedFunctionCount > 0 && commandBase != CUSTOM_COMMAND_END);
+
+	if (res) {
+		CustomCommandId cmid;		
+		auto cmdIdEnd = (CustomCommandId)UserCommandId::PRE_DEFINED_COMMAND_COUNT;
+		for (cmid = 0; cmid < cmdIdEnd; cmid++) {
+			getFunctionPtr(cmid + commandBase, &_checkFunctionPtrs[cmid]);
+		}
+	}
+
+	return res;
 }
 
 void BuzzSpyClient::unloadSpyLib() {
-	if (_hSpyLib) {
+	if (_hSpyLib != INVALID_MODULE_ID) {
 		if (unloadModule(_hSpyLib) != 0) {
 			cout << "unload spy lib " SPY_LIB_NAME " failed!" << endl;
 		}
 		else {
-			_hSpyLib = nullptr;
+			_hSpyLib = INVALID_MODULE_ID;
 		}
 	}
 }
@@ -64,7 +76,7 @@ bool BuzzSpyClient::startMonitorProcess(const char* processName) {
 
 	bool blRes = SpyClient::inject(processName, rootSpyPath, dependencies);
 	if (blRes) {
-		loadSpyLib();
+		blRes = loadSpyLib();
 	}
 
 	return blRes;
@@ -82,7 +94,70 @@ bool BuzzSpyClient::stopMonitorProcess() {
 
 bool BuzzSpyClient::restartMonitorProcess() {
 	stopMonitorProcess();
-	return reinject();
+	auto blRes = reinject();
+	if (blRes) {
+		blRes = loadSpyLib();
+	}
+
+	return blRes;
+}
+
+bool BuzzSpyClient::checkCommandsReady() {
+	bool res = checkTargetAvaible();
+	if (res == false) {
+		res = restartMonitorProcess();
+		if (res) {
+			cout << "Restarted monitor process" << endl;
+		}
+	}
+	else {
+		list<CustomCommandId> cmdIds;
+		int iRes = getModuleData(_hSpyLib, cmdIds, nullptr);
+		bool needReload = false;
+
+		// check if error occurs...
+		needReload = iRes != 0;
+
+		if (needReload == false) {
+			// make sure that the order of return command is same with current predefined command
+			cmdIds.sort();
+
+			auto it = cmdIds.begin();
+			CustomCommandId cmid;
+			auto cmdIdEnd = (CustomCommandId)UserCommandId::PRE_DEFINED_COMMAND_COUNT + _predefinedBase;
+			for (cmid = _predefinedBase; cmid < cmdIdEnd; cmid++, it++) {
+				if (cmid != *it) {
+					break;
+				}				
+			}
+
+			if (cmid != cmdIdEnd || it != cmdIds.end()) {
+				needReload = true;
+			}
+		}
+		if (needReload == false) {
+			CustomCommandId cmid;
+			void* ptr;
+			auto cmdIdEnd = (CustomCommandId)UserCommandId::PRE_DEFINED_COMMAND_COUNT;
+			for (cmid = 0; cmid < cmdIdEnd; cmid++) {
+				getFunctionPtr(cmid + _predefinedBase, &ptr);
+				if (ptr != _checkFunctionPtrs[cmid]) {
+					needReload = true;
+					break;
+				}
+			}
+		}
+
+		if (needReload) {
+			unloadSpyLib();
+			res = loadSpyLib();
+			if (res) {
+				cout << "Reloaded spy lib" << endl;
+			}
+		}
+	}
+
+	return res;
 }
 
 template <class T, class ...Args>

@@ -10,7 +10,7 @@ using namespace std;
 
 BuzzWindow::BuzzWindow(const std::string& title, int width, int height)
 {
-	ci::app::Window::Format format;	
+	ci::app::Window::Format format;
 	_nativeWindow = App::get()->createWindow(format);
 	_nativeWindow->setUserData(this);
 

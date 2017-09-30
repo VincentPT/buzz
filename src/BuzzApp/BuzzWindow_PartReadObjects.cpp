@@ -6,6 +6,9 @@
 #include "drawobjs/BuzzPolygon.h"
 #include "drawobjs/BuzzContainer.h"
 
+#include <iostream>
+
+using namespace std;
 using namespace ci;
 using namespace ci::app;
 
@@ -27,12 +30,9 @@ BuzzDrawObj* BuzzWindow::readObject(void* desireReadObjectAddress, int type) {
 		this->onStartMonitorProcess(nullptr);
 	}
 
-	bool res = _spyClient->checkTargetAvaible();
+	bool res = _spyClient->checkCommandsReady();
 	if (res == false) {
-		res = _spyClient->restartMonitorProcess();
-	}
-
-	if (res == false) {
+		cout << "Command cannot be executed, try restart the applications" << endl;
 		return nullptr;
 	}
 
@@ -154,10 +154,37 @@ BuzzPolygon* convertToBuzzOject(PointArrayRawData* ptr) {
 
 BuzzDrawObj* BuzzWindow::readCVContourObject(void* desireReadObjectAddress) {
 	BuzzDrawObj* pObj = nullptr;
+	int pointArrayType = _objectInputerDlgRef->getPointArrayTypeIndex();
 
-	_spyClient->readCVContour(desireReadObjectAddress, [this, &pObj](PointArrayRawData* &ptr) {
-		BuzzPolygon* bzPolygon = convertToBuzzOject(ptr);
-		pObj = bzPolygon;
+	_spyClient->readCVContour(desireReadObjectAddress, [this, &pObj, pointArrayType](PointArrayRawData* &ptr) {
+		if (pointArrayType == 0) {
+			BuzzPolygon* bzPolygon = convertToBuzzOject(ptr);
+			pObj = bzPolygon;
+		}
+		else {
+			BuzzContainer* bzContainer = new BuzzContainer();
+
+			PointRawData* p = ptr->points;
+			PointRawData* end = p + ptr->n;
+
+			int i = 0;
+			while (p < end)
+			{
+				std::stringstream ss;
+				ss << std::setfill('0') << std::setw(6) << i;				
+
+				BuzzPoint* bzPoint = new BuzzPoint((float)p->x, (float)p->y);
+				bzPoint->setRadius(6);
+				bzPoint->setColor(0xFF0000FF);
+				bzPoint->setName("point " + ss.str());
+				bzContainer->addObject(BuzzDrawObjRef(bzPoint));
+
+				p++;
+				i++;
+			}
+
+			pObj = bzContainer;
+		}
 	});
 
 	return pObj;

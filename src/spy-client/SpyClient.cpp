@@ -485,7 +485,9 @@ int SpyClient::loadDynamicFunctions(const char* dllFile, const char* functions[]
 
 	free(rawData);
 
-	int freeBufferRes = freeCustomCommandResult(&returnData);
+	if (freeCustomCommandResult(&returnData) != 0) {
+		cout << "an error occurs when release custom data" << endl;
+	}
 	return iRes;
 }
 
@@ -500,6 +502,118 @@ int SpyClient::unloadModule(ModuleId moduleId) {
 	int iRes = sendCommandToRemoteThread((BaseCmdData*)&cmdData, false, &functionReturnVal);
 	if (iRes != 0) {
 		return iRes;
+	}
+	return (int)functionReturnVal;
+}
+
+int SpyClient::getFunctionPtr(CustomCommandId cmdId, void** pptr) {
+	GetFunctionPtrCmdData cmdData;
+	cmdData.commandSize = sizeof(cmdData);
+	cmdData.commandId = CommandId::GET_CUSTOM_FUNCTION_PTR;
+	cmdData.customCommandId = cmdId;
+	cmdData.ptr = nullptr;
+
+	if (pptr) {
+		*pptr = nullptr;
+	}
+
+	DWORD functionReturnVal;
+	int iRes = sendCommandToRemoteThread((BaseCmdData*)&cmdData, true, &functionReturnVal);
+	if (iRes != 0) {
+		return iRes;
+	}
+
+	if (pptr) {
+		*pptr = cmdData.ptr;
+	}
+
+	return (int)functionReturnVal;
+}
+
+int SpyClient::getModuleData(ModuleId moduleId, std::list<CustomCommandId>& loadedCustomFunctions, HMODULE* hModule) {
+	GetModuleCmdData cmdData;
+	cmdData.commandSize = sizeof(cmdData);
+	cmdData.commandId = CommandId::GET_MODULE;
+	cmdData.moduleId = moduleId;
+	auto& returnData = cmdData.returnData;
+
+	if (hModule) {
+		*hModule = nullptr;
+	}
+
+	DWORD functionReturnVal;
+	int iRes = sendCommandToRemoteThread((BaseCmdData*)&cmdData, true, &functionReturnVal);
+	if (iRes != 0) {
+		return iRes;
+	}
+
+	if (returnData.customData == nullptr || returnData.sizeOfCustomData == 0) {
+		return -1;
+	}
+
+	ModuleData* rawData;
+	iRes = readCustomCommandResult(&returnData, (void**)&rawData);
+	if (iRes != 0) {
+		return iRes;
+	}
+
+	// fill the return data to local output data
+	if (hModule) {
+		*hModule = (HMODULE)rawData->hModule;
+	}
+	CustomCommandId* pCmdId = rawData->cmdIds;
+	auto functionCount = rawData->commandCount;
+
+	for (int i = 0; i < functionCount; i++) {
+		loadedCustomFunctions.push_back(*pCmdId++);
+	}
+
+	free(rawData);
+
+	if (freeCustomCommandResult(&returnData) != 0) {
+		cout << "an error occurs when release custom data" << endl;
+	}
+
+	return (int)functionReturnVal;
+}
+
+int SpyClient::getModulePath(ModuleId moduleId, std::string& path, HMODULE* hModule) {
+	GetModulePathCmdData cmdData;
+	cmdData.commandSize = sizeof(cmdData);
+	cmdData.commandId = CommandId::GET_MODULE_PATH;
+	cmdData.moduleId = moduleId;
+	auto& returnData = cmdData.returnData;
+
+	if (hModule) {
+		*hModule = nullptr;
+	}
+
+	DWORD functionReturnVal;
+	int iRes = sendCommandToRemoteThread((BaseCmdData*)&cmdData, true, &functionReturnVal);
+	if (iRes != 0) {
+		return iRes;
+	}
+
+	if (returnData.customData == nullptr || returnData.sizeOfCustomData == 0) {
+		return -1;
+	}
+
+	ModulePathData* rawData;
+	iRes = readCustomCommandResult(&returnData, (void**)&rawData);
+	if (iRes != 0) {
+		return iRes;
+	}
+
+	// fill the return data to local output data
+	if (hModule) {
+		*hModule = (HMODULE)rawData->hModule;
+	}
+	
+	path = rawData->path;
+
+	free(rawData);
+	if (freeCustomCommandResult(&returnData) != 0) {
+		cout << "an error occurs when release custom data" << endl;
 	}
 	return (int)functionReturnVal;
 }

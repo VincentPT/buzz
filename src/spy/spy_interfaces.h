@@ -5,6 +5,9 @@ enum class CommandId : unsigned short
 	LOAD_PREDEFINED_FUNCTIONS,
 	LOAD_CUSTOM_FUNCTIONS,
 	UNLOAD_MODULE,
+	GET_CUSTOM_FUNCTION_PTR,
+	GET_MODULE,
+	GET_MODULE_PATH,
 	CUSTOM_COMMAND,
 };
 
@@ -60,6 +63,41 @@ struct LoadCustomFunctionsCmdData {
 
 	char fNames[1];				// leading by dll name then function names. Seperated by zero character and terminate by zero
 };
+
+struct ModuleData {
+	void* hModule; // module handle
+	unsigned short commandCount; // custom command count
+	CustomCommandId cmdIds[1]; // custom command ids
+};
+
+struct ModulePathData {
+	void* hModule;
+	int bufferSize;
+	char path[1];
+};
+
+
+struct GetModulePathCmdData {
+	int commandSize;
+	CommandId commandId;
+	ModuleId moduleId;
+	ReturnData returnData; // return data, in customData is a pointer point to ModulePathData structure
+};
+
+struct GetModuleCmdData {
+	int commandSize;
+	CommandId commandId;
+	ModuleId moduleId;
+	ReturnData returnData; // return data, in customData is a pointer point to ModuleData structure
+};
+
+struct GetFunctionPtrCmdData {
+	int commandSize;
+	CommandId commandId;
+	CustomCommandId customCommandId; //[input] custom command which associate with the function
+	void* ptr; // [output]: function address.
+};
+
 
 struct UnloadModuleCmdData {
 	int commandSize;

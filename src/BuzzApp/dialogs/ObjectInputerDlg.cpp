@@ -12,12 +12,15 @@ ObjectInputerDlg::ObjectInputerDlg(ci::app::WindowRef window) :
 
 	_objectTypes = { "OpenCV Mat", "OpenCV Rect", "OpenCV Contour" };
 	_sortTypes = { "AsIs", "PointCountIncrease", "PointCountDecrease", "AreaIncrease", "AreaDecrease" };
+	_pointArrayTypes = {"polygon", "point array"};
 
 	nativeDlg->addTextField("Address", &_objectAddress, true);
 	nativeDlg->addEnum("Object type", &_objectTypes, &_objectTypeIdx);
 	nativeDlg->addButton("Add", &ObjectInputerDlg::onAddObjectButtonPress, this);
 	nativeDlg->addButton("Close", &BuzzDialog::onClose, (BuzzDialog*)this);
 	nativeDlg->addEnum("Contour sort type", &_sortTypes, &_sortTypeIdx);
+	nativeDlg->addEnum("points array types", &_pointArrayTypes, &_pointArrayTypeIdx);
+	nativeDlg->loadSettings();
 }
 
 ObjectInputerDlg::~ObjectInputerDlg() {}
@@ -25,6 +28,11 @@ ObjectInputerDlg::~ObjectInputerDlg() {}
 int ObjectInputerDlg::getSelectedTypeIndex() const {
 	return _objectTypeIdx;
 }
+
+int ObjectInputerDlg::getPointArrayTypeIndex() const {
+	return _pointArrayTypeIdx;
+}
+
 ObjectInputerDlg& ObjectInputerDlg::setSelectedTypeIndex(int idx) {
 	_objectTypeIdx = idx;
 	return *this;

@@ -41,4 +41,7 @@ public:
 	int loadPredefinedFunctions(const char* dllFile, ModuleId* moduleId = nullptr);
 	int loadDynamicFunctions(const char* dllFile, const char* functions[], int functionCount, std::list<CustomCommandId>& loadedCustomFunctions, ModuleId* moduleId = nullptr);
 	int unloadModule(ModuleId moduleId);
+	int getFunctionPtr(CustomCommandId cmdId, void** pptr);
+	int getModuleData(ModuleId moduleId, std::list<CustomCommandId>& loadedCustomFunctions, HMODULE* hModule);
+	int getModulePath(ModuleId moduleId, std::string& path, HMODULE* hModule);
 };

@@ -1,6 +1,7 @@
 #pragma once
 #include "spy_interfaces.h"
 #include <functional>
+#include <iostream>
 
 template<class T>
 class ScopeAutoFunction {
@@ -65,7 +66,9 @@ int executeCommandAndFreeCustomData(SpyClient* spyClient, CustomCommandId custom
 	}
 
 	// free customData in remote process
-	int freeBufferRes = spyClient->freeCustomCommandResult(&returnData);
+	if (spyClient->freeCustomCommandResult(&returnData) != 0) {
+		std::cout << "an error occurs when release custom data" << endl;
+	}
 	return iRes;
 }
 
