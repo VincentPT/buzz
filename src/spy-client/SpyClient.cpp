@@ -11,23 +11,6 @@
 
 using namespace std;
 
-int inline ReadDataFromRemoteProcess(HANDLE hProcess, void* remoteAddress, void* localBuffer, int size) {
-	BOOL readWriteResult;
-	SIZE_T numberOfBytes;
-
-	readWriteResult = ::ReadProcessMemory(hProcess, remoteAddress, localBuffer, (SIZE_T) size, &numberOfBytes);
-	if (readWriteResult == FALSE) {
-		cout << "cannot read data to remote process, GLE=" << GetLastError() << std::endl;
-		return -1;
-	}
-	if (numberOfBytes != size) {
-		cout << "error in reading data to remote process, GLE=" << GetLastError() << std::endl;
-		return -1;
-	}
-
-	return 0;
-}
-
 SpyClient::SpyClient() : _hTargetProcess(nullptr), _dwProcessId(0), _spyRootRemote(nullptr), _spyRootRemoteModule(nullptr) {
 }
 
@@ -37,8 +20,63 @@ SpyClient::~SpyClient() {
 	}
 }
 
-const std::string& SpyClient::getProcessName() {
+const std::string& SpyClient::getProcessName() const {
 	return _processName;
+}
+
+HANDLE SpyClient::getTargetHandle() const {
+	return _hTargetProcess;
+}
+
+void* SpyClient::allocateRemoteBuffer(int size) {
+	void* pRemoteBuffer = ::VirtualAllocEx(_hTargetProcess, NULL, (SIZE_T)size, MEM_COMMIT, PAGE_READWRITE);
+	if (pRemoteBuffer == nullptr) {
+		cout << "cannot allocate memory in remote process, GLE=" << GetLastError() << std::endl;
+	}
+
+	return pRemoteBuffer;
+}
+
+BOOL SpyClient::freeRemoteBuffer(void* remoteBuffer) {
+	BOOL res;
+	if ((res = VirtualFreeEx(_hTargetProcess, remoteBuffer, 0, MEM_RELEASE)) == FALSE) {
+		cout << "error in deallocate memory " << remoteBuffer << " in remote process, GLE=" << GetLastError() << std::endl;
+	}
+
+	return res;
+}
+
+int SpyClient::readDataFromRemoteProcess(void* remoteAddress, void* localBuffer, int size) {
+	BOOL readWriteResult;
+	SIZE_T numberOfBytes;
+
+	readWriteResult = ::ReadProcessMemory(_hTargetProcess, remoteAddress, localBuffer, (SIZE_T)size, &numberOfBytes);
+	if (readWriteResult == FALSE) {
+		std::cout << "cannot read data to remote process, GLE=" << GetLastError() << std::endl;
+		return -1;
+	}
+	if (numberOfBytes != size) {
+		std::cout << "error in reading data to remote process, GLE=" << GetLastError() << std::endl;
+		return -1;
+	}
+
+	return 0;
+}
+
+int SpyClient::writeDataToRemoteProcess(void* remoteAddress, void* localBuffer, int size) {
+	SIZE_T numberOfBytes;
+	auto readWriteResult = ::WriteProcessMemory(_hTargetProcess, remoteAddress, localBuffer,
+		(SIZE_T)size, &numberOfBytes);
+	if (readWriteResult == FALSE) {
+		std::cout << "cannot write data to remote process, GLE=" << GetLastError() << std::endl;
+		return -1;
+	}
+	if (numberOfBytes != (SIZE_T)size) {
+		std::cout << "error in writing data to remote process, GLE=" << GetLastError() << std::endl;
+		return -1;
+	}
+
+	return 0;
 }
 
 DWORD SpyClient::getProcessByName(const char* processName) {
@@ -144,7 +182,7 @@ bool SpyClient::inject(const char* processName, const std::string& rootDllPath, 
 		return false;
 	}
 
-	ScopeAutoFunction<std::function<void()>> autoFreeLib = [localHandle]() {
+	ScopeAutoFunction autoFreeLib = [localHandle]() {
 		// free the library in current process after the scope exit
 		FreeLibrary(localHandle);
 	};
@@ -257,36 +295,24 @@ bool SpyClient::executeRemoteCommand(void* remoteProc, const void* data, int dat
 	}
 
 	void*   pRemoteData = nullptr;
-	SIZE_T numberOfBytes;
 
 	// auto free remote buffer function
-	ScopeAutoFunction<function<void()>> autoFreeRemoteBufer([&]() {
+	ScopeAutoFunction autoFreeRemoteBufer([&]() {
 		if (pRemoteData != nullptr && pptrRemote == nullptr) {
-			if (VirtualFreeEx(_hTargetProcess, pRemoteData, 0, MEM_RELEASE) == FALSE) {
-				cout << "error in deallocate memory " << pRemoteData << " in remote process, GLE=" << GetLastError() << std::endl;
-			}
+			 freeRemoteBuffer(pRemoteData);
 		}
 	});
 
-	pRemoteData = ::VirtualAllocEx(_hTargetProcess, NULL, (SIZE_T)dataSize,
-		MEM_COMMIT, PAGE_READWRITE);
+	pRemoteData = allocateRemoteBuffer(dataSize);
 	if (pRemoteData == NULL) {
-		cout << "cannot allocate memory in remote process, GLE=" << GetLastError() << std::endl;
 		return false;
 	}
 
 	if (pptrRemote != nullptr) {
 		*pptrRemote = pRemoteData;
 	}
-
-	auto readWriteResult = ::WriteProcessMemory(_hTargetProcess, pRemoteData, (void*)data,
-		dataSize, &numberOfBytes);
-	if (readWriteResult == FALSE) {
-		cout << "cannot write data to remote process, GLE=" << GetLastError() << std::endl;
-		return false;
-	}
-	if (numberOfBytes != dataSize) {
-		cout << "error in writing data to remote process, GLE=" << GetLastError() << std::endl;
+	auto readWriteResult = writeDataToRemoteProcess(pRemoteData, (void*)data, dataSize);
+	if (readWriteResult) {
 		return false;
 	}
 
@@ -318,11 +344,9 @@ int SpyClient::sendCommandToRemoteThread(void* commandData, int commandSize, boo
 	void*   pRemoteData = nullptr;
 
 	// auto free remote buffer function
-	ScopeAutoFunction<function<void()>> autoFreeRemoteBufer([&]() {
+	ScopeAutoFunction autoFreeRemoteBufer([&]() {
 		if (pRemoteData != nullptr) {
-			if (VirtualFreeEx(_hTargetProcess, pRemoteData, 0, MEM_RELEASE) == FALSE) {
-				cout << "error in deallocate memory " << pRemoteData << " in remote process, GLE=" << GetLastError() << std::endl;
-			}
+			freeRemoteBuffer(pRemoteData);
 		}
 	});
 
@@ -333,7 +357,7 @@ int SpyClient::sendCommandToRemoteThread(void* commandData, int commandSize, boo
 	}
 
 	if (readComandBack) {
-		int iRes = ReadDataFromRemoteProcess(_hTargetProcess, pRemoteData, commandData, commandSize);
+		int iRes = readDataFromRemoteProcess(pRemoteData, commandData, commandSize);
 		if (iRes != 0) {
 			return iRes;
 		}
@@ -363,7 +387,7 @@ int SpyClient::readCustomCommandResult(ReturnData* pReturnData, void** ppCustomD
 	}
 
 	void* localCustomData = malloc(pReturnData->sizeOfCustomData);
-	int iRes = ReadDataFromRemoteProcess(_hTargetProcess, pReturnData->customData, localCustomData, pReturnData->sizeOfCustomData);
+	int iRes = readDataFromRemoteProcess(pReturnData->customData, localCustomData, pReturnData->sizeOfCustomData);
 	if (iRes != 0) {
 		free(localCustomData);
 		*ppCustomData = nullptr;

@@ -3,16 +3,15 @@
 #include <functional>
 #include <iostream>
 
-template<class T>
 class ScopeAutoFunction {
-	T _fx;
+	std::function<void()> _fx;
 public:
 	
-	ScopeAutoFunction(const T& fx) {
+	ScopeAutoFunction(const std::function<void()>& fx) {
 		_fx = fx;
 	}
 	
-	ScopeAutoFunction(T&& fx) {
+	ScopeAutoFunction(std::function<void()>&& fx) {
 		_fx = fx;
 	}
 
@@ -22,6 +21,24 @@ public:
 };
 
 class SpyClient;
+
+
+/// allocate buffer in remote process and copy val to allcated buffer
+/// use must call freeRemoteBuffer to deallocate buffer after using.
+template <class T>
+void* cloneBufferToRemoteProcess(SpyClient* spyClient, const T& val) {
+	void* remoteBuffer = spyClient->allocateRemoteBuffer(sizeof(T));
+	if (remoteBuffer == nullptr) {
+		return nullptr;
+	}
+
+	if (spyClient->writeDataToRemoteProcess(remoteBuffer, (void*)&val, sizeof(T))) {
+		spyClient->freeRemoteBuffer(remoteBuffer);
+		return nullptr;
+	}
+
+	return remoteBuffer;
+}
 
 template <class ...Args>
 int executeCommandAndFreeCustomData(SpyClient* spyClient, CustomCommandId customCmdId, const std::function<void(ReturnData&)>& handler, Args...args) {

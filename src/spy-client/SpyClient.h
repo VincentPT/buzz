@@ -16,11 +16,17 @@ protected:
 public:
 	SpyClient();
 	virtual ~SpyClient();
-	const std::string& getProcessName();
+	const std::string& getProcessName() const;
+	HANDLE getTargetHandle() const;
 
 	static DWORD getProcessByName(const char* processName);
 	static HMODULE getModuleByName(DWORD th32ProcessID, const char* moduleName, std::string& modulePath);
 	static std::string getModuleName(const std::string& dllPath);
+
+	void* allocateRemoteBuffer(int size);
+	BOOL freeRemoteBuffer(void* remoteBuffer);
+	int readDataFromRemoteProcess(void* remoteAddress, void* localBuffer, int size);
+	int writeDataToRemoteProcess(void* remoteAddress, void* localBuffer, int size);
 
 	bool inject(const char* processName, const std::string& rootDllPath, const std::list<std::string>& dependencyDllPaths);
 	bool uninject();
