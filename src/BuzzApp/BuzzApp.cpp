@@ -45,14 +45,18 @@ void setupConsole() {
 
 void BuzzApp::setup()
 {
-	using namespace std::placeholders;
-
 	setupConsole();
 
 	WindowRef defaultNativeWindow = getWindow();
 
 	auto firstWindow = new BuzzWindow(defaultNativeWindow);
 	firstWindow->setTitle("buzz");
+
+	setupCliboard();
+}
+
+void BuzzApp::setupCliboard() {
+	using namespace std::placeholders;
 
 	ClipboardViewer* clipboardViewer = ClipboardViewer::getInstance();
 	// register ANSI text handler
@@ -78,7 +82,13 @@ void BuzzApp::keyDown( KeyEvent event )
 }
 
 void BuzzApp::update() {
-
+	auto windowCount = getNumWindows();
+	
+	// find another window available
+	for (int i = 0; i < windowCount; i++) {
+		auto nativeWindow = getWindowIndex(i);
+		nativeWindow->getUserData<BuzzWindow>()->update();
+	}
 }
 
 void BuzzApp::draw() {

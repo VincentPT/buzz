@@ -10,6 +10,7 @@ public:
 	BuzzApp();
 	~BuzzApp();
 	void setup();
+	void setupCliboard();
 
 	void mouseDrag(ci::app::MouseEvent event);
 	void keyDown(ci::app::KeyEvent event);

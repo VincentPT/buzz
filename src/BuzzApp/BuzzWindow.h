@@ -21,6 +21,9 @@ class BuzzWindow
 	bool									_pendingResize = false;
 	double									_updateFBOIV = 0.25f; //time in seconds to update FBO after an user's continous event
 	double									_lastEventOccur = 0; // time in seconds that last continous event occur
+	double									_sheduleClipboardRestartAt; // time when restart clipboard action is requested
+	float									_restartClipboardIV = 1.0f; //time in seconds to restart clipboard viewer
+	bool									_needRestartClipboard = false;
 
 	ci::app::WindowRef						_nativeWindow;	
 	ci::ColorA*								_bckColor;
@@ -55,6 +58,9 @@ public:
 	~BuzzWindow();
 
 	void needUpdate(bool flag = true);
+	void scheduleRestartClipboard();
+	bool isRestartClipboardShduled() const;
+	void cancleRestartClipboard();
 
 	BuzzWindow& setTitle(const std::string& title);
 	BuzzWindow& setSize(int width, int height);
@@ -63,6 +69,7 @@ public:
 
 	/// this function is should only should only be called by draw function of a cinder app
 	void draw();
+	void update();
 
 	void addNewObject(BuzzDrawObj* obj);
 

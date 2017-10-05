@@ -83,6 +83,8 @@ void ClipboardViewer::stopMonitor() {
 	}
 
 	ChangeClipboardChain(_hwnd, _hwndNext);
+
+	_hwnd = nullptr;
 }
 
 void ClipboardViewer::connectANSI(std::function<void(const std::string&)>&& ansiTextdHandler) {
@@ -171,4 +173,8 @@ void ClipboardViewer::notifyClipboardChangeToHandlers() {
 		cout << "Unsupport clipboard format" << std::endl;
 		break;
 	}
+}
+
+void ClipboardViewer::clearHandlers() {
+	_registeredFormats.clear();
 }

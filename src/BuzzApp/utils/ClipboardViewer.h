@@ -36,5 +36,7 @@ public:
 	void connectUnicode(std::function<void(const std::wstring&)>&& unicodeTextHandler);
 	// register monitor bitmap format in clipboard
 	void connectBitmap(std::function<void(HBITMAP)>&& bitmapHandler);
+
+	void clearHandlers();
 };
 

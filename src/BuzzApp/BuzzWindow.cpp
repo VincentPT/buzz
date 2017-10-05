@@ -4,6 +4,8 @@
 #include "drawobjs/BuzzContainer.h"
 #include "drawobjs/BuzzHasLine.h"
 
+#include "BuzzApp.h"
+
 using namespace ci;
 using namespace ci::app;
 using namespace std;
@@ -113,6 +115,38 @@ void applyLineColorForAll(BuzzDrawObj* obj, const ColorA& color) {
 	};
 
 	applyObjectSettingForAll(obj, changeColor);
+}
+
+void BuzzWindow::update() {
+	if (_needRestartClipboard) {
+		double currentTimeFromLaunch = App::get()->getElapsedSeconds();
+		if (currentTimeFromLaunch - _sheduleClipboardRestartAt >= (double)_restartClipboardIV) {
+			auto clipboardViewer = ClipboardViewer::getInstance();
+			clipboardViewer->startMonitor((HWND)_nativeWindow->getNative());
+	
+			((BuzzApp*)App::get())->setupCliboard();
+
+			cout << "restarted clipboard viewer" << endl;
+			_needRestartClipboard = false;
+		}
+	}
+}
+
+void BuzzWindow::scheduleRestartClipboard() {
+	_needRestartClipboard = true;
+	_sheduleClipboardRestartAt = App::get()->getElapsedSeconds();
+	cout << "shedule of restarting clipboard has been set!" << endl;
+}
+
+bool BuzzWindow::isRestartClipboardShduled() const {
+	return _needRestartClipboard;
+}
+
+void BuzzWindow::cancleRestartClipboard() {
+	if (_needRestartClipboard) {
+		cout << "shedule of restarting clipboard has been cancelled!" << endl;
+	}
+	_needRestartClipboard = false;
 }
 
 void BuzzWindow::draw() {
@@ -232,28 +266,36 @@ void BuzzWindow::onKeyPress(KeyEvent& e) {
 void BuzzWindow::onClose() {
 	auto clipboardViewer = ClipboardViewer::getInstance();
 
+	auto checkAndSheduleRestartClipboard = [&]() {
+		// start monitor clipboard on another window
+		auto app = App::get();
+		auto windowCount = app->getNumWindows();
+		if (windowCount < 2) {
+			// no window left
+			return;
+		}
+
+		// find another window available
+		for (int i = (int)(windowCount - 1); i >= 0; i--) {
+			auto nativeWindow = app->getWindowIndex(i);
+			if (nativeWindow.get() != _nativeWindow.get()) {
+				nativeWindow->getUserData<BuzzWindow>()->scheduleRestartClipboard();
+				break;
+			}
+		}
+	};
+
 	// check if current viewer is going to closed
 	if (clipboardViewer->getCurrentViewer() != (HWND)_nativeWindow->getNative()) {
+		if (isRestartClipboardShduled()) {
+			cancleRestartClipboard();
+			checkAndSheduleRestartClipboard();
+		}
 		return;
 	}
 	clipboardViewer->stopMonitor();
-
-	// start monitor clipboard on another window
-	auto app = App::get();
-	auto windowCount = app->getNumWindows();
-	if (windowCount < 2) {
-		// no window left
-		return;
-	}
-
-	// find another window available
-	for (int i = (int)(windowCount - 1); i >= 0; i--) {
-		auto nativeWindow = app->getWindowIndex(i);
-		if (nativeWindow.get() != _nativeWindow.get()) {
-			clipboardViewer->startMonitor((HWND)nativeWindow->getNative());
-			break;
-		}
-	}
+	clipboardViewer->clearHandlers();
+	checkAndSheduleRestartClipboard();
 }
 
 void BuzzWindow::onResize() {
